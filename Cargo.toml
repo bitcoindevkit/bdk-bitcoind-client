@@ -8,5 +8,4 @@ corepc-types = { version = "0.10.1", features = ["default"]}
 jsonrpc = { version = "0.18.0", features = ["simple_http", "simple_tcp", "minreq_http", "simple_uds", "proxy"] }
 
 [features]
-default = [ "v30" ]
 v30 = [ ]
