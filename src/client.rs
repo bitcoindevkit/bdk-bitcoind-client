@@ -2,12 +2,21 @@ use std::{
     fs::File,
     io::{BufRead, BufReader},
     path::PathBuf,
+    str::FromStr,
 };
 
 use crate::error::Error;
 use crate::jsonrpc::minreq_http::Builder;
-use corepc_types::bitcoin::BlockHash;
-use jsonrpc::{serde, serde_json, Transport};
+use corepc_types::{
+    bitcoin::{
+        Block, BlockHash, Transaction, Txid, block::Header, consensus::deserialize, hex::FromHex,
+    },
+    model::{GetBlockCount, GetBlockFilter, GetBlockVerboseOne, GetRawMempool},
+};
+use jsonrpc::{
+    Transport, serde,
+    serde_json::{self, json},
+};
 
 /// client authentication methods
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
@@ -101,10 +110,93 @@ impl Client {
 
 // `bitcoind` RPC methods
 impl Client {
-    /// Get best block hash.
+    /// Get block
+    pub fn get_block(&self, block_hash: &BlockHash) -> Result<Block, Error> {
+        let hex_string: String = self.call("getblock", &[json!(block_hash), json!(0)])?;
+
+        let bytes: Vec<u8> = Vec::<u8>::from_hex(&hex_string).map_err(Error::HexToBytes)?;
+
+        let block: Block = deserialize(&bytes)
+            .map_err(|e| Error::InvalidResponse(format!("failed to deserialize block: {e}")))?;
+
+        Ok(block)
+    }
+
+    /// Get block verboseone
+    pub fn get_block_verbose(&self, block_hash: &BlockHash) -> Result<GetBlockVerboseOne, Error> {
+        let res: GetBlockVerboseOne = self.call("getblock", &[json!(block_hash), json!(1)])?;
+        Ok(res)
+    }
+
+    /// Get best block hash
     pub fn get_best_block_hash(&self) -> Result<BlockHash, Error> {
         let res: String = self.call("getbestblockhash", &[])?;
         Ok(res.parse()?)
+    }
+
+    /// Get block count
+    pub fn get_block_count(&self) -> Result<u64, Error> {
+        let res: GetBlockCount = self.call("getblockcount", &[])?;
+        Ok(res.0)
+    }
+
+    /// Get block hash
+    pub fn get_block_hash(&self, height: u32) -> Result<BlockHash, Error> {
+        let raw: serde_json::Value = self.call("getblockhash", &[json!(height)])?;
+
+        let hash_str = match raw {
+            serde_json::Value::String(s) => s,
+            serde_json::Value::Object(obj) => obj
+                .get("hash")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| Error::InvalidResponse("getblockhash: missing 'hash' field".into()))?
+                .to_string(),
+            _ => {
+                return Err(Error::InvalidResponse(
+                    "getblockhash: unexpected response type".into(),
+                ));
+            }
+        };
+
+        BlockHash::from_str(&hash_str).map_err(Error::HexToArray)
+    }
+
+    /// Get block filter
+    pub fn get_block_filter(&self, block_hash: BlockHash) -> Result<GetBlockFilter, Error> {
+        let res: GetBlockFilter = self.call("getblockfilter", &[json!(block_hash)])?;
+        Ok(res)
+    }
+
+    /// Get block header
+    pub fn get_block_header(&self, block_hash: &BlockHash) -> Result<Header, Error> {
+        let hex_string: String = self.call("getblockheader", &[json!(block_hash), json!(false)])?;
+
+        let bytes = Vec::<u8>::from_hex(&hex_string).map_err(Error::HexToBytes)?;
+
+        let header = deserialize(&bytes).map_err(|e| {
+            Error::InvalidResponse(format!("failed to deserialize block header: {e}"))
+        })?;
+
+        Ok(header)
+    }
+
+    /// Get raw mempool
+    pub fn get_raw_mempool(&self) -> Result<Vec<Txid>, Error> {
+        let res: GetRawMempool = self.call("getrawmempool", &[])?;
+        Ok(res.0)
+    }
+
+    /// Get raw transaction
+    pub fn get_raw_transaction(&self, txid: &Txid) -> Result<Transaction, Error> {
+        let hex_string: String = self.call("getrawtransaction", &[json!(txid)])?;
+
+        let bytes = Vec::<u8>::from_hex(&hex_string).map_err(Error::HexToBytes)?;
+
+        let transaction = deserialize(&bytes).map_err(|e| {
+            Error::InvalidResponse(format!("transaction deserialization failed: {e}"))
+        })?;
+
+        Ok(transaction)
     }
 }
 

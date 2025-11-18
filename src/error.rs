@@ -2,7 +2,7 @@
 
 use std::{fmt, io};
 
-use corepc_types::bitcoin::hex::HexToArrayError;
+use corepc_types::bitcoin::hex::{HexToArrayError, HexToBytesError};
 use jsonrpc::serde_json;
 
 /// Result type alias for the RPC client.
@@ -23,6 +23,9 @@ pub enum Error {
     /// JSON-RPC error from the server.
     JsonRpc(jsonrpc::Error),
 
+    /// Hex decoding error for byte vectors (used in get_block, etc.)
+    HexToBytes(HexToBytesError),
+
     /// Hash parsing error.
     HexToArray(HexToArrayError),
 
@@ -41,6 +44,7 @@ impl fmt::Display for Error {
             }
             Error::InvalidCookieFile => write!(f, "invalid cookie file"),
             Error::InvalidResponse(e) => write!(f, "invalid response: {e}"),
+            Error::HexToBytes(e) => write!(f, "Hex to bytes error: {e}"),
             Error::HexToArray(e) => write!(f, "Hash parsing eror: {e}"),
             Error::JsonRpc(e) => write!(f, "JSON-RPC error: {e}"),
             Error::Json(e) => write!(f, "JSON error: {e}"),
@@ -55,6 +59,7 @@ impl std::error::Error for Error {
             Error::JsonRpc(e) => Some(e),
             Error::Json(e) => Some(e),
             Error::Io(e) => Some(e),
+            Error::HexToBytes(e) => Some(e),
             Error::HexToArray(e) => Some(e),
             _ => None,
         }
