@@ -1,0 +1,54 @@
+name: Security Audit
+
+on:
+  pull_request:
+    paths:
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+  merge_group:
+  push:
+    branches: [master]
+    paths:
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+  schedule:
+    # weekly
+    - cron: '0 0 * * 0'
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: read               
+  security-events: write      
+  issues: write                
+
+jobs:
+  cargo-audit:
+    name: RustSec Audit (vulnerabilities)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry/index/target
+        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1
+        with:
+          cache-on-failure: true
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+
+      - name: Run cargo audit (raw output — you will see this clearly)
+        run: cargo audit --deny warnings   
+        
+      - name: Run cargo audit again for GitHub Security tab upload
+        uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212ae3e3c0d700
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          deny: warnings
+          

@@ -7,7 +7,7 @@
 //! bitcoind -regtest -rpcuser=bitcoin -rpcpassword=bitcoin -rpcport=18443
 //! ```
 
-use bdk_rpc_client::{Auth, Client, Error};
+use bdk_bitcoind_client::{Auth, Client, Error};
 use corepc_types::bitcoin::BlockHash;
 use std::path::PathBuf;
 
