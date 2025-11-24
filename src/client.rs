@@ -7,7 +7,7 @@ use std::{
 use crate::error::Error;
 use crate::jsonrpc::minreq_http::Builder;
 use corepc_types::bitcoin::BlockHash;
-use jsonrpc::{Transport, serde, serde_json};
+use jsonrpc::{serde, serde_json, Transport};
 
 /// client authentication methods
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]

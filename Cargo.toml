@@ -1,9 +1,19 @@
 [package]
-name = "bdk-rpc-client"
+name = "bdk-bitcoind-client"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+rust-version = "1.75.0"
+homepage = "https://bitcoindevkit.org"
+repository = "https://github.com/bitcoindevkit/bdk-bitcoind-client"
+documentation = "https://docs.rs/bdk-bitcoind-client"
+description = "A minimal production-ready bitcoind RPC client for Bitcoin Dev Kit."
+license = "MIT OR Apache-2.0"
+authors = ["Bitcoin Dev Kit Developers"]
+readme = "README.md"
 
 [dependencies]
 corepc-types = { version = "0.10.1", features = ["default"]}
 jsonrpc = { version = "0.18.0", features = ["simple_http", "simple_tcp", "minreq_http", "simple_uds", "proxy"] }
 
+[features]
+30_0 = []
