@@ -1,54 +1,50 @@
 name: Security Audit
 
 on:
-  pull_request:
+  push:
     paths:
       - '**/Cargo.toml'
       - '**/Cargo.lock'
-  merge_group:
-  push:
-    branches: [master]
+  pull_request:
     paths:
       - '**/Cargo.toml'
       - '**/Cargo.lock'
   schedule:
     # weekly
     - cron: '0 0 * * 0'
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
 
 permissions:
-  contents: read               
-  security-events: write      
-  issues: write                
+  contents: read
+  security-events: write   
+  issues: write            
 
 jobs:
   cargo-audit:
     name: RustSec Audit (vulnerabilities)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache cargo registry/index/target
-        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+      - name: Install Rust toolchain and configure cache
+        uses: actions-rust-lang/setup-rust-toolchain@1780873c7b576612439a134613cc4cc74ce5538c
         with:
-          cache-on-failure: true
+          toolchain: stable
+          cache: true
 
       - name: Install cargo-audit
         run: cargo install cargo-audit --locked
 
-      - name: Run cargo audit (raw output — you will see this clearly)
-        run: cargo audit --deny warnings   
-        
-      - name: Run cargo audit again for GitHub Security tab upload
-        uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212ae3e3c0d700
+      - name: Run cargo audit 
+        run: cargo audit --deny warnings
+
+      - name: Upload SARIF to GitHub Security tab
+        uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           deny: warnings
-          
