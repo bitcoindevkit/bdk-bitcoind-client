@@ -20,3 +20,6 @@ default = ["30_0"]
 30_0 = []
 29_0 = []
 28_0 = []
+
+[dev-dependencies]
+corepc-node = { version = "0.10.1", features = ["download", "29_0"] }

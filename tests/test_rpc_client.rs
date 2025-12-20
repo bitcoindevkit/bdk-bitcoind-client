@@ -8,25 +8,39 @@
 //! ```
 
 use bdk_bitcoind_client::{Auth, Client, Error};
+use corepc_node::{exe_path, Conf, Node};
 use corepc_types::bitcoin::{BlockHash, Txid};
 use jsonrpc::serde_json::json;
 use std::{path::PathBuf, str::FromStr};
 
-/// Helper to get the test RPC URL
-fn test_url() -> String {
-    std::env::var("BITCOIN_RPC_URL").unwrap_or_else(|_| "http://localhost:18443".to_string())
+/// Helper to initialize the bitcoind executable path
+fn init() -> String {
+    exe_path().expect("bitcoind executable not found. Set BITCOIND_EXE or enable download feature.")
 }
 
-/// Helper to get test credentials
-fn test_auth() -> Auth {
-    let user = std::env::var("BITCOIN_RPC_USER").unwrap_or_else(|_| "bitcoin".to_string());
-    let pass = std::env::var("BITCOIN_RPC_PASS").unwrap_or_else(|_| "bitcoin".to_string());
-    Auth::UserPass(user, pass)
-}
+/// Helper to set up a clean bitcoind node and return the client.
+fn setup() -> (Client, Node) {
+    let exe = init();
 
-/// Helper to create a test client
-fn test_client() -> Client {
-    Client::with_auth(&test_url(), test_auth()).expect("failed to create client")
+    let mut conf = Conf::default();
+
+    conf.args.push("-blockfilterindex=1");
+    conf.args.push("-txindex=1");
+
+    let node = Node::with_conf(exe, &conf).expect("Failed to start node");
+
+    let rpc_url = node.rpc_url();
+    let cookie = node
+        .params
+        .get_cookie_values()
+        .expect("Failed to read cookie")
+        .expect("Cookie file empty");
+
+    let auth = Auth::UserPass(cookie.user, cookie.password);
+
+    let client = Client::with_auth(&rpc_url, auth).expect("failed to create client");
+
+    (client, node)
 }
 
 /// Helper to mine blocks
@@ -36,28 +50,32 @@ fn mine_blocks(client: &Client, n: u64) -> Result<Vec<String>, Error> {
 }
 
 #[test]
-#[ignore]
 fn test_client_with_user_pass() {
-    let client = Client::with_auth(&test_url(), test_auth()).expect("failed to create client");
+    let (client, mut node) = setup();
 
-    let result = client
+    let block_hash = client
         .get_best_block_hash()
-        .expect("failed to call getblockchaininfo");
+        .expect("failed to call getbestblockhash");
 
     assert_eq!(
-        result.to_string().len(),
+        block_hash.to_string().len(),
         64,
         "block hash should be 64 characters"
     );
     assert!(
-        result.to_string().chars().all(|c| c.is_ascii_hexdigit()),
+        block_hash
+            .to_string()
+            .chars()
+            .all(|c| c.is_ascii_hexdigit()),
         "hash should only contain hex digits"
     );
+
+    node.stop().expect("failed to stop node");
 }
 
 #[test]
 fn test_auth_none_returns_error() {
-    let result = Client::with_auth(&test_url(), Auth::None);
+    let result = Client::with_auth("http://invalid-url", Auth::None);
 
     assert!(result.is_err());
     match result {
@@ -67,10 +85,10 @@ fn test_auth_none_returns_error() {
 }
 
 #[test]
-#[ignore]
 fn test_invalid_credentials() {
+    let (_, mut node) = setup();
     let client = Client::with_auth(
-        &test_url(),
+        &node.rpc_url(),
         Auth::UserPass("wrong".to_string(), "credentials".to_string()),
     )
     .expect("client creation should succeed");
@@ -78,38 +96,55 @@ fn test_invalid_credentials() {
     let result: Result<BlockHash, Error> = client.get_best_block_hash();
 
     assert!(result.is_err());
+
+    node.stop().expect("failed to stop node");
 }
 
 #[test]
 fn test_invalid_cookie_file() {
+    let dummy_url = "http://127.0.0.1:18443";
     let cookie_path = PathBuf::from("/nonexistent/path/to/cookie");
-    let result = Client::with_auth(&test_url(), Auth::CookieFile(cookie_path));
 
-    assert!(result.is_err());
+    let result = Client::with_auth(dummy_url, Auth::CookieFile(cookie_path));
+
+    assert!(
+        result.is_err(),
+        "Client should fail when cookie file is missing"
+    );
+
     match result {
         Err(Error::InvalidCookieFile) => (),
-        Err(Error::Io(_)) => (),
-        _ => panic!("expected InvalidCookieFile or Io error"),
+        Err(Error::Io(ref e)) if e.kind() == std::io::ErrorKind::NotFound => (),
+        Err(e) => panic!("Expected InvalidCookieFile or NotFound Io error, got: {e:?}"),
+        _ => panic!("Expected an error but got Ok"),
     }
 }
 
 #[test]
-#[ignore]
 fn test_client_with_custom_transport() {
     use jsonrpc::http::minreq_http::Builder;
 
+    let (_, node) = setup();
+
+    let rpc_url = node.rpc_url();
+    let cookie = node
+        .params
+        .get_cookie_values()
+        .expect("Failed to read cookie")
+        .expect("Cookie file empty");
+
     let transport = Builder::new()
-        .url(&test_url())
+        .url(&rpc_url)
         .expect("invalid URL")
         .timeout(std::time::Duration::from_secs(30))
-        .basic_auth("bitcoin".to_string(), Some("bitcoin".to_string()))
+        .basic_auth(cookie.user, Some(cookie.password))
         .build();
 
     let client = Client::with_transport(transport);
 
     let result = client
         .get_best_block_hash()
-        .expect("failed to call getblockchaininfo");
+        .expect("failed to call getbestblockhash");
 
     assert_eq!(
         result.to_string().len(),
@@ -119,31 +154,32 @@ fn test_client_with_custom_transport() {
 }
 
 #[test]
-#[ignore]
 fn test_get_block_count() {
-    let client = test_client();
+    let (client, mut node) = setup();
 
     let block_count = client.get_block_count().expect("failed to get block count");
 
-    assert!(block_count >= 1);
+    assert_eq!(block_count, 0);
+
+    node.stop().expect("failed to stop node");
 }
 
 #[test]
-#[ignore]
 fn test_get_block_hash() {
-    let client = test_client();
+    let (client, mut node) = setup();
 
     let genesis_hash = client
         .get_block_hash(0)
         .expect("failed to get genesis block hash");
 
     assert_eq!(genesis_hash.to_string().len(), 64);
+
+    node.stop().expect("failed to stop node");
 }
 
 #[test]
-#[ignore]
 fn test_get_block_hash_for_current_height() {
-    let client = test_client();
+    let (client, mut node) = setup();
 
     let block_count = client.get_block_count().expect("failed to get block count");
 
@@ -152,33 +188,41 @@ fn test_get_block_hash_for_current_height() {
         .expect("failed to get block hash");
 
     assert_eq!(block_hash.to_string().len(), 64);
+    node.stop().expect("failed to stop node");
 }
 
 #[test]
-#[ignore]
 fn test_get_block_hash_invalid_height() {
-    let client = test_client();
+    let (client, mut node) = setup();
 
     let result = client.get_block_hash(999999999);
 
     assert!(result.is_err());
+    node.stop().expect("failed to stop node");
 }
 
 #[test]
-#[ignore]
 fn test_get_best_block_hash() {
-    let client = test_client();
+    let (client, mut node) = setup();
 
     let best_block_hash = client
         .get_best_block_hash()
         .expect("failed to get best block hash");
+
     assert_eq!(best_block_hash.to_string().len(), 64);
+
+    let block_count = client.get_block_count().expect("failed to get block count");
+    let block_hash = client
+        .get_block_hash(block_count)
+        .expect("failed to get block hash");
+
+    assert_eq!(best_block_hash, block_hash);
+    node.stop().expect("failed to stop node");
 }
 
 #[test]
-#[ignore]
 fn test_get_best_block_hash_changes_after_mining() {
-    let client = test_client();
+    let (client, mut node) = setup();
 
     let hash_before = client
         .get_best_block_hash()
@@ -191,12 +235,12 @@ fn test_get_best_block_hash_changes_after_mining() {
         .expect("failed to get best block hash");
 
     assert_ne!(hash_before, hash_after);
+    node.stop().expect("failed to stop node");
 }
 
 #[test]
-#[ignore]
 fn test_get_block() {
-    let client = test_client();
+    let (client, mut node) = setup();
 
     let genesis_hash = client
         .get_block_hash(0)
@@ -208,12 +252,12 @@ fn test_get_block() {
 
     assert_eq!(block.block_hash(), genesis_hash);
     assert!(!block.txdata.is_empty());
+    node.stop().expect("failed to stop node");
 }
 
 #[test]
-#[ignore]
 fn test_get_block_after_mining() {
-    let client = test_client();
+    let (client, mut node) = setup();
 
     let hashes = mine_blocks(&client, 1).expect("failed to mine block");
     let block_hash = BlockHash::from_str(&hashes[0]).expect("invalid hash");
@@ -222,12 +266,12 @@ fn test_get_block_after_mining() {
 
     assert_eq!(block.block_hash(), block_hash);
     assert!(!block.txdata.is_empty());
+    node.stop().expect("failed to stop node");
 }
 
 #[test]
-#[ignore]
 fn test_get_block_invalid_hash() {
-    let client = test_client();
+    let (client, mut node) = setup();
 
     let invalid_hash =
         BlockHash::from_str("0000000000000000000000000000000000000000000000000000000000000000")
@@ -236,12 +280,12 @@ fn test_get_block_invalid_hash() {
     let result = client.get_block(&invalid_hash);
 
     assert!(result.is_err());
+    node.stop().expect("failed to stop node");
 }
 
 #[test]
-#[ignore]
 fn test_get_block_header() {
-    let client = test_client();
+    let (client, mut node) = setup();
 
     let genesis_hash = client
         .get_block_hash(0)
@@ -252,12 +296,12 @@ fn test_get_block_header() {
         .expect("failed to get block header");
 
     assert_eq!(header.block_hash(), genesis_hash);
+    node.stop().expect("failed to stop node");
 }
 
 #[test]
-#[ignore]
 fn test_get_block_header_has_valid_fields() {
-    let client = test_client();
+    let (client, mut node) = setup();
 
     let genesis_hash = client
         .get_block_hash(0)
@@ -269,12 +313,12 @@ fn test_get_block_header_has_valid_fields() {
 
     assert!(header.time > 0);
     assert!(header.nonce >= 1);
+    node.stop().expect("failed to stop node");
 }
 
 #[test]
-#[ignore]
 fn test_get_raw_mempool_empty() {
-    let client = test_client();
+    let (client, mut node) = setup();
 
     mine_blocks(&client, 1).expect("failed to mine block");
 
@@ -283,12 +327,12 @@ fn test_get_raw_mempool_empty() {
     let mempool = client.get_raw_mempool().expect("failed to get mempool");
 
     assert!(mempool.is_empty());
+    node.stop().expect("failed to stop node");
 }
 
 #[test]
-#[ignore]
 fn test_get_raw_mempool_with_transaction() {
-    let client = test_client();
+    let (client, mut node) = setup();
 
     mine_blocks(&client, 101).expect("failed to mine blocks");
 
@@ -303,12 +347,12 @@ fn test_get_raw_mempool_with_transaction() {
 
     let txid_parsed = Txid::from_str(&txid).unwrap();
     assert!(mempool.contains(&txid_parsed));
+    node.stop().expect("failed to stop node");
 }
 
 #[test]
-#[ignore]
 fn test_get_raw_transaction() {
-    let client = test_client();
+    let (client, mut node) = setup();
 
     mine_blocks(&client, 1).expect("failed to mine block");
 
@@ -327,12 +371,12 @@ fn test_get_raw_transaction() {
     assert_eq!(tx.compute_txid(), *txid);
     assert!(!tx.input.is_empty());
     assert!(!tx.output.is_empty());
+    node.stop().expect("failed to stop node");
 }
 
 #[test]
-#[ignore]
 fn test_get_raw_transaction_invalid_txid() {
-    let client = test_client();
+    let (client, mut node) = setup();
 
     let fake_txid =
         Txid::from_str("0000000000000000000000000000000000000000000000000000000000000000").unwrap();
@@ -340,12 +384,12 @@ fn test_get_raw_transaction_invalid_txid() {
     let result = client.get_raw_transaction(&fake_txid);
 
     assert!(result.is_err());
+    node.stop().expect("failed to stop node");
 }
 
 #[test]
-#[ignore]
 fn test_get_block_filter() {
-    let client = test_client();
+    let (client, mut node) = setup();
 
     let genesis_hash = client
         .get_block_hash(0)
@@ -361,4 +405,5 @@ fn test_get_block_filter() {
             println!("Block filters not enabled (requires -blockfilterindex=1)");
         }
     }
+    node.stop().expect("failed to stop node");
 }

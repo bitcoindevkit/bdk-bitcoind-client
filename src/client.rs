@@ -6,13 +6,12 @@ use std::{
 
 use crate::error::Error;
 use crate::jsonrpc::minreq_http::Builder;
-#[cfg(not(feature = "29_0"))]
-use corepc_types::v30::GetBlockFilter;
 use corepc_types::{
     bitcoin::{
         block::Header, consensus::encode::deserialize_hex, Block, BlockHash, Transaction, Txid,
     },
-    model::{GetBlockCount, GetRawMempool},
+    model::{GetBlockCount, GetBlockFilter, GetRawMempool},
+    v30,
 };
 use jsonrpc::{
     serde,
@@ -22,9 +21,6 @@ use jsonrpc::{
 
 #[cfg(feature = "28_0")]
 pub mod v28;
-
-#[cfg(feature = "29_0")]
-pub mod v29;
 
 /// Client authentication methods for the Bitcoin Core JSON-RPC server
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
@@ -151,9 +147,8 @@ impl Client {
     ///
     /// The deserialized `Block` struct.
     pub fn get_block(&self, block_hash: &BlockHash) -> Result<Block, Error> {
-        let block_string: String = self.call("getblock", &[json!(block_hash), json!(0)])?;
-        let block = deserialize_hex(&block_string)?;
-        Ok(block)
+        self.call::<String>("getblock", &[json!(block_hash), json!(0)])
+            .and_then(|blockhash_hex| deserialize_hex(&blockhash_hex).map_err(Error::DecodeHex))
     }
 
     /// Retrieves the hash of the tip of the best block chain.
@@ -162,8 +157,8 @@ impl Client {
     ///
     /// The `BlockHash` of the chain tip.
     pub fn get_best_block_hash(&self) -> Result<BlockHash, Error> {
-        let best_block_hash: String = self.call("getbestblockhash", &[])?;
-        Ok(best_block_hash.parse()?)
+        self.call::<String>("getbestblockhash", &[])
+            .and_then(|blockhash_hex| blockhash_hex.parse().map_err(Error::HexToArray))
     }
 
     /// Retrieves the number of blocks in the longest chain
@@ -172,10 +167,10 @@ impl Client {
     ///
     /// The block count as a `u32`
     pub fn get_block_count(&self) -> Result<u32, Error> {
-        let block_count: GetBlockCount = self.call("getblockcount", &[])?;
-        let block_count_u64 = block_count.0;
-        let block_count_u32 = block_count_u64.try_into()?;
-        Ok(block_count_u32)
+        self.call::<GetBlockCount>("getblockcount", &[])?
+            .0
+            .try_into()
+            .map_err(Error::TryFromInt)
     }
 
     /// Retrieves the block hash at a given height
@@ -188,8 +183,8 @@ impl Client {
     ///
     /// The `BlockHash` for the given height
     pub fn get_block_hash(&self, height: u32) -> Result<BlockHash, Error> {
-        let block_hash: String = self.call("getblockhash", &[json!(height)])?;
-        Ok(block_hash.parse()?)
+        self.call::<String>("getblockhash", &[json!(height)])
+            .and_then(|blockhash_hex| blockhash_hex.parse().map_err(Error::HexToArray))
     }
 
     /// Retrieve the `basic` BIP 157 content filter for a particular block
@@ -201,10 +196,10 @@ impl Client {
     /// # Returns
     ///
     /// The `GetBlockFilter` structure containing the filter data
-    #[cfg(not(feature = "29_0"))]
     pub fn get_block_filter(&self, block_hash: &BlockHash) -> Result<GetBlockFilter, Error> {
-        let block_filter: GetBlockFilter = self.call("getblockfilter", &[json!(block_hash)])?;
-        Ok(block_filter)
+        let block_filter: v30::GetBlockFilter =
+            self.call("getblockfilter", &[json!(block_hash)])?;
+        block_filter.into_model().map_err(Error::GetBlockFilter)
     }
 
     /// Retrieves the raw block header for a given block hash.
@@ -217,10 +212,8 @@ impl Client {
     ///
     /// The deserialized `Header` struct
     pub fn get_block_header(&self, block_hash: &BlockHash) -> Result<Header, Error> {
-        let header_string: String =
-            self.call("getblockheader", &[json!(block_hash), json!(false)])?;
-        let header = deserialize_hex(&header_string)?;
-        Ok(header)
+        self.call::<String>("getblockheader", &[json!(block_hash), json!(false)])
+            .and_then(|header_hex: String| deserialize_hex(&header_hex).map_err(Error::DecodeHex))
     }
 
     /// Retrieves the transaction IDs of all transactions currently in the mempool
@@ -229,8 +222,8 @@ impl Client {
     ///
     /// A vector of `Txid`s in the raw mempool
     pub fn get_raw_mempool(&self) -> Result<Vec<Txid>, Error> {
-        let txids: GetRawMempool = self.call("getrawmempool", &[])?;
-        Ok(txids.0)
+        self.call::<GetRawMempool>("getrawmempool", &[])
+            .map(|txids| txids.0)
     }
 
     /// Retrieves the raw transaction data for a given transaction ID
@@ -243,17 +236,13 @@ impl Client {
     ///
     /// The deserialized `Transaction` struct
     pub fn get_raw_transaction(&self, txid: &Txid) -> Result<Transaction, Error> {
-        let hex_string: String = self.call("getrawtransaction", &[json!(txid)])?;
-        let transaction = deserialize_hex(&hex_string)?;
-        Ok(transaction)
+        self.call::<String>("getrawtransaction", &[json!(txid)])
+            .and_then(|tx_hex| deserialize_hex(&tx_hex).map_err(Error::DecodeHex))
     }
 }
 
 #[cfg(not(feature = "28_0"))]
-use corepc_types::{
-    model::{GetBlockHeaderVerbose, GetBlockVerboseOne},
-    v30,
-};
+use corepc_types::model::{GetBlockHeaderVerbose, GetBlockVerboseOne};
 
 #[cfg(not(feature = "28_0"))]
 impl Client {
@@ -268,13 +257,13 @@ impl Client {
     /// The verbose header as a `GetBlockHeaderVerbose` struct.
     pub fn get_block_header_verbose(
         &self,
-        hash: &BlockHash,
+        block_hash: &BlockHash,
     ) -> Result<GetBlockHeaderVerbose, Error> {
         let header_info: v30::GetBlockHeaderVerbose =
-            self.call("getblockheader", &[json!(hash)])?;
+            self.call("getblockheader", &[json!(block_hash)])?;
         header_info
             .into_model()
-            .map_err(Error::GetBlockHeaderVerboseError)
+            .map_err(Error::GetBlockHeaderVerbose)
     }
 
     /// Retrieves the verbose JSON representation of a block (verbosity 1).
@@ -286,12 +275,10 @@ impl Client {
     /// # Returns
     ///
     /// The verbose block data as a `GetBlockVerboseOne` struct.
-    pub fn get_block_verbose(&self, hash: &BlockHash) -> Result<GetBlockVerboseOne, Error> {
+    pub fn get_block_verbose(&self, block_hash: &BlockHash) -> Result<GetBlockVerboseOne, Error> {
         let block_info: v30::GetBlockVerboseOne =
-            self.call("getblock", &[json!(hash), json!(1)])?;
-        block_info
-            .into_model()
-            .map_err(Error::GetBlockVerboseOneError)
+            self.call("getblock", &[json!(block_hash), json!(1)])?;
+        block_info.into_model().map_err(Error::GetBlockVerboseOne)
     }
 }
 

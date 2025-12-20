@@ -11,3 +11,5 @@ pub use client::{Auth, Client};
 pub use error::{Error, Result};
 
 pub use jsonrpc;
+// Re-export corepc_types
+pub use corepc_types;
