@@ -14,7 +14,9 @@ build:
 # Check code: formatting, compilation, linting, and commit signature
 check:
    cargo +nightly fmt --all -- --check
-   cargo check --all-features --all-targets
+   cargo check --all-targets --no-default-features --features "30_0"
+   cargo check --all-targets --no-default-features --features "29_0"
+   cargo check --all-targets --no-default-features --features "28_0"
    cargo clippy --all-features --all-targets -- -D warnings
    @[ "$(git log --pretty='format:%G?' -1 HEAD)" = "N" ] && \
        echo "\n⚠️  Unsigned commit: BDK requires that commits be signed." || \
