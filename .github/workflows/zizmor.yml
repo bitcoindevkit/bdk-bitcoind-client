@@ -1,28 +1,30 @@
 name: GitHub Actions Security Analysis with zizmor
 
 on:
-  pull_request:                  
+  pull_request:
     branches: ["**"]
-  push:                          
-    branches: ["**"]             
+  push:
+    branches: ["**"]
   schedule:
-    - cron: '0 0 * * 0'          
-  workflow_dispatch:            
+    - cron: '0 0 * * 0' # At 00:00 on Sunday
+  workflow_dispatch:
 
-permissions:
-  contents: read
-  security-events: write         
+permissions: {}
 
 jobs:
   zizmor:
     name: zizmor security scan
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           persist-credentials: false
 
-      - name: Run zizmor 
-        uses: zizmorcore/zizmor-action@135698455da5c3b3e55f73f4419e481ab68cdd95  
+      - name: Run zizmor
+        uses: zizmorcore/zizmor-action@135698455da5c3b3e55f73f4419e481ab68cdd95

@@ -2,6 +2,8 @@ on: [push, pull_request]
 
 name: CI
 
+permissions: {}
+
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
@@ -21,7 +23,7 @@ jobs:
           toolchain: stable
           components: rustfmt
           cache: true
-      
+
       - name: Check fmt
         run: cargo fmt --all -- --check
 
@@ -37,7 +39,7 @@ jobs:
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
-          persist-credentials: false      
+          persist-credentials: false
       - name: Install Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@1780873c7b576612439a134613cc4cc74ce5538c # v1
         with:
@@ -61,19 +63,19 @@ jobs:
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
-          persist-credentials: false      
+          persist-credentials: false
       - name: Install Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@1780873c7b576612439a134613cc4cc74ce5538c # v1
         with:
           toolchain: stable
           cache: true
-      
+
       - name: Build
         run: cargo build ${{ matrix.features }} --verbose
-      
+
       - name: Run unit tests
         run: cargo test ${{ matrix.features }} --lib --verbose
-      
+
       - name: Run doc tests
         run: cargo test ${{ matrix.features }} --doc --verbose
 
@@ -84,12 +86,12 @@ jobs:
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
-          persist-credentials: false      
+          persist-credentials: false
       - name: Install Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@1780873c7b576612439a134613cc4cc74ce5538c # v1
         with:
           toolchain: 1.75.0
           cache: true
-          
+
       - name: Check MSRV
         run: cargo check --all-features

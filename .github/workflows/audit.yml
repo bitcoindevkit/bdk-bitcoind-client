@@ -10,23 +10,23 @@ on:
       - '**/Cargo.toml'
       - '**/Cargo.lock'
   schedule:
-    # weekly
-    - cron: '0 0 * * 0'
+    - cron: '0 0 * * 0' # At 00:00 on Sunday
   workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
 
-permissions:
-  contents: read
-  security-events: write   
-  issues: write            
+permissions: {}
 
 jobs:
   cargo-audit:
     name: RustSec Audit (vulnerabilities)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+      issues: write
 
     steps:
       - name: Checkout code
