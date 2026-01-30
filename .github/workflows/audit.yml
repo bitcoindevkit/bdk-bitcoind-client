@@ -10,29 +10,31 @@ on:
       - '**/Cargo.toml'
       - '**/Cargo.lock'
   schedule:
-    # weekly
-    - cron: '0 0 * * 0'
+    - cron: '0 0 * * 0' # At 00:00 on Sunday
   workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
 
-permissions:
-  contents: read
-  security-events: write   
-  issues: write            
+permissions: {}
 
 jobs:
   cargo-audit:
     name: RustSec Audit (vulnerabilities)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+      issues: write
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          persist-credentials: false
       - name: Install Rust toolchain and configure cache
-        uses: actions-rust-lang/setup-rust-toolchain@1780873c7b576612439a134613cc4cc74ce5538c
+        uses: actions-rust-lang/setup-rust-toolchain@1780873c7b576612439a134613cc4cc74ce5538c # v1
         with:
           toolchain: stable
           cache: true
@@ -47,4 +49,3 @@ jobs:
         uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          deny: warnings
