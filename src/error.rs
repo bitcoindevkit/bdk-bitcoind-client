@@ -27,14 +27,11 @@ pub enum Error {
     /// Error modeling [`GetBlockFilter`](corepc_types::model::GetBlockFilter)
     GetBlockFilter(GetBlockFilterError),
 
-    /// Missing authentication credentials.
-    MissingAuthentication,
-
     /// Invalid or corrupted cookie file.
     InvalidCookieFile,
 
-    /// Invalid response from the RPC server.
-    InvalidResponse(String),
+    /// The provided URL is syntactically incorrect
+    InvalidUrl(String),
 
     /// JSON-RPC error from the server.
     JsonRpc(jsonrpc::Error),
@@ -55,20 +52,34 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Error::MissingAuthentication => {
-                write!(f, "authentication is required but none was provided")
-            }
-            Error::InvalidCookieFile => write!(f, "invalid cookie file"),
-            Error::InvalidResponse(e) => write!(f, "invalid response: {e}"),
-            Error::HexToArray(e) => write!(f, "Hash parsing eror: {e}"),
+            Error::DecodeHex(e) => write!(f, "hex deserialization error: {e}"),
+            Error::GetBlockVerboseOne(e) => write!(f, "block verbose error: {e}"),
+            Error::GetBlockHeaderVerbose(e) => write!(f, "block header verbose error: {e}"),
+            Error::GetBlockFilter(e) => write!(f, "block filter error: {e}"),
+            Error::InvalidCookieFile => write!(f, "invalid or missing cookie file"),
+            Error::InvalidUrl(e) => write!(f, "invalid RPC URL: {e}"),
+            Error::HexToArray(e) => write!(f, "hash parsing error: {e}"),
             Error::JsonRpc(e) => write!(f, "JSON-RPC error: {e}"),
             Error::Json(e) => write!(f, "JSON error: {e}"),
             Error::Io(e) => write!(f, "I/O error: {e}"),
-            Error::DecodeHex(e) => write!(f, "Hex deserialization error: {e}"),
-            Error::GetBlockHeaderVerbose(e) => write!(f, "{e}"),
-            Error::GetBlockVerboseOne(e) => write!(f, "{e}"),
-            Error::TryFromInt(e) => write!(f, "Integer conversion overflow error: {e}"),
-            Error::GetBlockFilter(e) => write!(f, "{e}"),
+            Error::TryFromInt(e) => write!(f, "integer conversion overflow: {e}"),
+        }
+    }
+}
+
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Error::DecodeHex(e) => Some(e),
+            Error::JsonRpc(e) => Some(e),
+            Error::HexToArray(e) => Some(e),
+            Error::Json(e) => Some(e),
+            Error::Io(e) => Some(e),
+            Error::TryFromInt(e) => Some(e),
+            Error::GetBlockVerboseOne(e) => Some(e),
+            Error::GetBlockHeaderVerbose(e) => Some(e),
+            Error::GetBlockFilter(e) => Some(e),
+            _ => None,
         }
     }
 }

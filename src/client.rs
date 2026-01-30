@@ -25,8 +25,6 @@ pub mod v28;
 /// Client authentication methods for the Bitcoin Core JSON-RPC server
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Auth {
-    /// No authentication (not recommended)
-    None,
     /// Username and password authentication (RPC user/pass)
     UserPass(String, String),
     /// Authentication via a cookie file
@@ -42,7 +40,6 @@ impl Auth {
     /// Returns an error if the `CookieFile` cannot be read or invalid
     pub fn get_user_pass(self) -> Result<(Option<String>, Option<String>), Error> {
         match self {
-            Auth::None => Ok((None, None)),
             Auth::UserPass(u, p) => Ok((Some(u), Some(p))),
             Auth::CookieFile(path) => {
                 let line = BufReader::new(File::open(path)?)
@@ -78,21 +75,15 @@ impl Client {
     ///
     /// # Errors
     ///
-    /// * Returns `Error::MissingAuthentication` if `Auth::None` is provided.
-    /// * Returns `Error::InvalidResponse` if the URL is invalid.
+    /// * Returns `Error::InvalidUrl` if the URL is invalid.
     /// * Returns errors related to reading the cookie file.
     pub fn with_auth(url: &str, auth: Auth) -> Result<Self, Error> {
-        if matches!(auth, Auth::None) {
-            return Err(Error::MissingAuthentication);
-        }
-
         let mut builder = Builder::new()
             .url(url)
-            .map_err(|e| Error::InvalidResponse(format!("Invalid URL: {e}")))?
+            .map_err(|e| Error::InvalidUrl(format!("{e}")))?
             .timeout(std::time::Duration::from_secs(60));
 
         builder = match auth {
-            Auth::None => unreachable!(),
             Auth::UserPass(user, pass) => builder.basic_auth(user, Some(pass)),
             Auth::CookieFile(path) => {
                 let cookie = std::fs::read_to_string(path)
@@ -148,7 +139,7 @@ impl Client {
     /// The deserialized `Block` struct.
     pub fn get_block(&self, block_hash: &BlockHash) -> Result<Block, Error> {
         self.call::<String>("getblock", &[json!(block_hash), json!(0)])
-            .and_then(|blockhash_hex| deserialize_hex(&blockhash_hex).map_err(Error::DecodeHex))
+            .and_then(|block_hex| deserialize_hex(&block_hex).map_err(Error::DecodeHex))
     }
 
     /// Retrieves the hash of the tip of the best block chain.
@@ -292,14 +283,6 @@ mod test_auth {
         let result = auth.get_user_pass().expect("failed to get user pass");
 
         assert_eq!(result, (Some("user".to_string()), Some("pass".to_string())));
-    }
-
-    #[test]
-    fn test_auth_none_get_user_pass() {
-        let auth = Auth::None;
-        let result = auth.get_user_pass().expect("failed to get user pass");
-
-        assert_eq!(result, (None, None));
     }
 
     #[test]

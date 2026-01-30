@@ -74,17 +74,6 @@ fn test_client_with_user_pass() {
 }
 
 #[test]
-fn test_auth_none_returns_error() {
-    let result = Client::with_auth("http://invalid-url", Auth::None);
-
-    assert!(result.is_err());
-    match result {
-        Err(Error::MissingAuthentication) => (),
-        _ => panic!("expected MissingAuthentication error"),
-    }
-}
-
-#[test]
 fn test_invalid_credentials() {
     let (_, mut node) = setup();
     let client = Client::with_auth(
