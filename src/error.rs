@@ -1,9 +1,13 @@
 //! Error types for the Bitcoin RPC client.
 
-use std::{fmt, io};
-
-use corepc_types::bitcoin::hex::HexToArrayError;
+use bitcoin::{consensus::encode::FromHexError, hex::HexToArrayError};
+#[cfg(feature = "28_0")]
+use corepc_types::v17::{GetBlockHeaderVerboseError, GetBlockVerboseOneError};
+#[cfg(not(feature = "28_0"))]
+use corepc_types::v30::{GetBlockHeaderVerboseError, GetBlockVerboseOneError};
+use corepc_types::{bitcoin, v30::GetBlockFilterError};
 use jsonrpc::serde_json;
+use std::{fmt, io, num::TryFromIntError};
 
 /// Result type alias for the RPC client.
 pub type Result<T> = std::result::Result<T, Error>;
@@ -11,6 +15,18 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// Errors that can occur when using the Bitcoin RPC client.
 #[derive(Debug)]
 pub enum Error {
+    /// Hex deserialization error
+    DecodeHex(FromHexError),
+
+    /// Error converting `GetBlockVersboseOne` type into the model type
+    GetBlockVerboseOne(GetBlockVerboseOneError),
+
+    /// Error modeling [`GetBlockHeaderVerbose`](corepc_types::model::GetBlockHeaderVerbose).
+    GetBlockHeaderVerbose(GetBlockHeaderVerboseError),
+
+    /// Error modeling [`GetBlockFilter`](corepc_types::model::GetBlockFilter)
+    GetBlockFilter(GetBlockFilterError),
+
     /// Missing authentication credentials.
     MissingAuthentication,
 
@@ -31,6 +47,9 @@ pub enum Error {
 
     /// I/O error (e.g., reading cookie file, network issues).
     Io(io::Error),
+
+    /// Error when converting an integer type to a smaller type due to overflow.
+    TryFromInt(TryFromIntError),
 }
 
 impl fmt::Display for Error {
@@ -45,21 +64,16 @@ impl fmt::Display for Error {
             Error::JsonRpc(e) => write!(f, "JSON-RPC error: {e}"),
             Error::Json(e) => write!(f, "JSON error: {e}"),
             Error::Io(e) => write!(f, "I/O error: {e}"),
+            Error::DecodeHex(e) => write!(f, "Hex deserialization error: {e}"),
+            Error::GetBlockHeaderVerbose(e) => write!(f, "{e}"),
+            Error::GetBlockVerboseOne(e) => write!(f, "{e}"),
+            Error::TryFromInt(e) => write!(f, "Integer conversion overflow error: {e}"),
+            Error::GetBlockFilter(e) => write!(f, "{e}"),
         }
     }
 }
 
-impl std::error::Error for Error {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Error::JsonRpc(e) => Some(e),
-            Error::Json(e) => Some(e),
-            Error::Io(e) => Some(e),
-            Error::HexToArray(e) => Some(e),
-            _ => None,
-        }
-    }
-}
+impl std::error::Error for Error {}
 
 // Conversions from other error types
 impl From<jsonrpc::Error> for Error {
@@ -83,5 +97,23 @@ impl From<HexToArrayError> for Error {
 impl From<io::Error> for Error {
     fn from(e: io::Error) -> Self {
         Error::Io(e)
+    }
+}
+
+impl From<TryFromIntError> for Error {
+    fn from(e: TryFromIntError) -> Self {
+        Error::TryFromInt(e)
+    }
+}
+
+impl From<GetBlockVerboseOneError> for Error {
+    fn from(e: GetBlockVerboseOneError) -> Self {
+        Error::GetBlockVerboseOne(e)
+    }
+}
+
+impl From<FromHexError> for Error {
+    fn from(e: FromHexError) -> Self {
+        Error::DecodeHex(e)
     }
 }
