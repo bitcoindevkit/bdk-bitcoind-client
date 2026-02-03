@@ -1,3 +1,4 @@
+use core::future::Future;
 use core::sync::atomic::{AtomicUsize, Ordering};
 
 use jsonrpc::serde_json;
@@ -61,15 +62,17 @@ impl Client {
     }
 
     /// Execute the RPC asynchronously.
-    pub async fn call_async<T, E>(
+    pub async fn call_async<T, E, F, Fut>(
         &self,
         rpc: impl RpcMethod,
         params: &[Value],
-        send_fn: impl AsyncFn(Request) -> Result<Response, E>,
+        send_fn: F,
     ) -> Result<T, Error>
     where
         T: for<'de> Deserialize<'de>,
         E: std::error::Error + Send + Sync + 'static,
+        F: Fn(Value) -> Fut,
+        Fut: Future<Output = Result<Response, E>>,
     {
         let method = rpc.method();
         let raw_value = if params.is_empty() {
@@ -79,7 +82,8 @@ impl Client {
         };
         let request = self.request(&method, raw_value.as_deref());
         let request_id = request.id.clone();
-        let response = send_fn(request).await.map_err(Error::transport)?;
+        let value = serde_json::to_value(request)?;
+        let response = send_fn(value).await.map_err(Error::transport)?;
         if response.id != request_id {
             return Err(Error::NonceMismatch);
         }

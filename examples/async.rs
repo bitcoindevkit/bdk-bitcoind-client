@@ -17,23 +17,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create RPC client
     let client = bdk_bitcoind_client::Client::new();
 
-    // Implement send request function
-    use jsonrpc::{Request, Response};
-    let send_fn = async |request: Request| -> Result<Response, bitreq::Error> {
-        bitreq::post(URL)
-            .with_header(
-                "Authorization",
-                format!("Basic {}", BASE64.encode(cookie.as_bytes())),
-            )
-            .with_json(&request)?
-            .send_async()
-            .await?
-            .json::<jsonrpc::Response>()
+    // Implement async send request function
+    let auth_header = format!("Basic {}", BASE64.encode(cookie.as_bytes()));
+    let send_fn = move |request_value: serde_json::Value| {
+        let auth_header = auth_header.clone();
+        async move {
+            bitreq::post(URL)
+                .with_header("Authorization", auth_header)
+                .with_json(&request_value)?
+                .send_async()
+                .await?
+                .json::<jsonrpc::Response>()
+        }
     };
 
     // Execute the RPC
     let blockchain_info = client
-        .call_async::<v29::GetBlockchainInfo, _>(Rpc::GetBlockchainInfo, &[], send_fn)
+        .call_async::<v29::GetBlockchainInfo, _, _, _>(Rpc::GetBlockchainInfo, &[], send_fn)
         .await?
         .into_model()?;
 
