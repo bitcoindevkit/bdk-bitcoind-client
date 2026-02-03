@@ -1,5 +1,5 @@
 [package]
-name = "bdk-bitcoind-client"
+name = "bdk_bitcoind_client"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.75.0"
@@ -12,8 +12,31 @@ authors = ["Bitcoin Dev Kit Developers"]
 readme = "README.md"
 
 [dependencies]
-corepc-types = { version = "0.10.1", features = ["default"]}
-jsonrpc = { version = "0.18.0", features = ["simple_http", "simple_tcp", "minreq_http", "simple_uds", "proxy"] }
+corepc-types = { version = "0.10.1", default-features = false }
+jsonrpc = { version = "0.19.0", default-features = false }
+serde = { version = "1", default-features = false, features = ["derive"] }
+serde_json = { version = "1", default-features = false, features = ["raw_value"] }
+
+# Used by the blocking client
+bitreq = { version = "0.3.1", default-features = false, features = ["std", "json-using-serde"], optional = true }
+
+[dev-dependencies.bdk_bitcoind_client]
+path = "."
+features = ["bitreq"]
+
+[dev-dependencies]
+anyhow = "1"
+bitreq = { version = "0.3.1", features = ["async"] }
+jsonrpc = { version = "0.19.0", default-features = false, features = ["base64"] }
+tokio = { version = "1", features = ["full"] }
 
 [features]
+default = []
 30_0 = []
+bitreq = ["dep:bitreq", "jsonrpc/bitreq_http", "corepc-types/std"]
+
+[[example]]
+name = "async"
+
+[[example]]
+name = "bitreq"

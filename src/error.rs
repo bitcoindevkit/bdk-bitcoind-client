@@ -1,63 +1,66 @@
 //! Error types for the Bitcoin RPC client.
 
+use alloc::boxed::Box;
+use core::num::TryFromIntError;
 use std::{fmt, io};
 
 use corepc_types::bitcoin::hex::HexToArrayError;
 use jsonrpc::serde_json;
 
-/// Result type alias for the RPC client.
-pub type Result<T> = std::result::Result<T, Error>;
-
 /// Errors that can occur when using the Bitcoin RPC client.
 #[derive(Debug)]
 pub enum Error {
-    /// Missing authentication credentials.
-    MissingAuthentication,
-
-    /// Invalid or corrupted cookie file.
-    InvalidCookieFile,
-
-    /// Invalid response from the RPC server.
-    InvalidResponse(String),
-
-    /// JSON-RPC error from the server.
-    JsonRpc(jsonrpc::Error),
-
     /// Hash parsing error.
     HexToArray(HexToArrayError),
-
-    /// JSON serialization/deserialization error.
-    Json(serde_json::Error),
-
     /// I/O error (e.g., reading cookie file, network issues).
     Io(io::Error),
+    /// Invalid or corrupted cookie file.
+    InvalidCookieFile,
+    /// JSON serialization/deserialization error.
+    Json(serde_json::Error),
+    /// JSON-RPC error from the server.
+    JsonRpc(jsonrpc::Error),
+    /// model types error
+    Model(Box<dyn std::error::Error + Send + Sync>),
+    /// nonce mismatch
+    NonceMismatch,
+    /// integer conversion
+    TryFromInt(TryFromIntError),
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Error::MissingAuthentication => {
-                write!(f, "authentication is required but none was provided")
-            }
-            Error::InvalidCookieFile => write!(f, "invalid cookie file"),
-            Error::InvalidResponse(e) => write!(f, "invalid response: {e}"),
-            Error::HexToArray(e) => write!(f, "Hash parsing eror: {e}"),
-            Error::JsonRpc(e) => write!(f, "JSON-RPC error: {e}"),
-            Error::Json(e) => write!(f, "JSON error: {e}"),
-            Error::Io(e) => write!(f, "I/O error: {e}"),
+            Self::HexToArray(e) => write!(f, "{e}"),
+            Self::Io(e) => write!(f, "{e}"),
+            Self::InvalidCookieFile => write!(f, "invalid cookie file"),
+            Self::Json(e) => write!(f, "{e}"),
+            Self::JsonRpc(e) => write!(f, "{e}"),
+            Self::Model(e) => write!(f, "{e}"),
+            Self::NonceMismatch => write!(f, "mismatched nonce"),
+            Self::TryFromInt(e) => write!(f, "{e}"),
         }
     }
 }
 
-impl std::error::Error for Error {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Error::JsonRpc(e) => Some(e),
-            Error::Json(e) => Some(e),
-            Error::Io(e) => Some(e),
-            Error::HexToArray(e) => Some(e),
-            _ => None,
-        }
+impl std::error::Error for Error {}
+
+impl Error {
+    /// Convert `e` to a [`Error::Model`] error.
+    #[cfg(feature = "bitreq")]
+    pub(crate) fn model<E>(e: E) -> Self
+    where
+        E: std::error::Error + Send + Sync + 'static,
+    {
+        Self::Model(Box::new(e))
+    }
+
+    /// Convert `e` to a [`jsonrpc::Error::Transport`] error.
+    pub(crate) fn transport<E>(e: E) -> Self
+    where
+        E: std::error::Error + Send + Sync + 'static,
+    {
+        Self::JsonRpc(jsonrpc::Error::Transport(Box::new(e)))
     }
 }
 
@@ -83,5 +86,11 @@ impl From<HexToArrayError> for Error {
 impl From<io::Error> for Error {
     fn from(e: io::Error) -> Self {
         Error::Io(e)
+    }
+}
+
+impl From<TryFromIntError> for Error {
+    fn from(e: TryFromIntError) -> Self {
+        Error::TryFromInt(e)
     }
 }
