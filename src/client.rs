@@ -43,7 +43,7 @@ impl Client {
     ) -> Result<T, Error>
     where
         T: for<'de> Deserialize<'de>,
-        E: core::error::Error + Send + Sync + 'static,
+        E: std::error::Error + Send + Sync + 'static,
     {
         let method = rpc.method();
         let raw_value = if params.is_empty() {
@@ -69,7 +69,7 @@ impl Client {
     ) -> Result<T, Error>
     where
         T: for<'de> Deserialize<'de>,
-        E: core::error::Error + Send + Sync + 'static,
+        E: std::error::Error + Send + Sync + 'static,
     {
         let method = rpc.method();
         let raw_value = if params.is_empty() {

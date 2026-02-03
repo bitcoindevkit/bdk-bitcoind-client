@@ -21,7 +21,7 @@ pub enum Error {
     /// JSON-RPC error from the server.
     JsonRpc(jsonrpc::Error),
     /// model types error
-    Model(Box<dyn core::error::Error + Send + Sync>),
+    Model(Box<dyn std::error::Error + Send + Sync>),
     /// nonce mismatch
     NonceMismatch,
     /// integer conversion
@@ -43,14 +43,14 @@ impl fmt::Display for Error {
     }
 }
 
-impl core::error::Error for Error {}
+impl std::error::Error for Error {}
 
 impl Error {
     /// Convert `e` to a [`Error::Model`] error.
     #[cfg(feature = "bitreq")]
     pub(crate) fn model<E>(e: E) -> Self
     where
-        E: core::error::Error + Send + Sync + 'static,
+        E: std::error::Error + Send + Sync + 'static,
     {
         Self::Model(Box::new(e))
     }
@@ -58,7 +58,7 @@ impl Error {
     /// Convert `e` to a [`jsonrpc::Error::Transport`] error.
     pub(crate) fn transport<E>(e: E) -> Self
     where
-        E: core::error::Error + Send + Sync + 'static,
+        E: std::error::Error + Send + Sync + 'static,
     {
         Self::JsonRpc(jsonrpc::Error::Transport(Box::new(e)))
     }
