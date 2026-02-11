@@ -67,22 +67,7 @@ impl fmt::Display for Error {
     }
 }
 
-impl std::error::Error for Error {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Error::DecodeHex(e) => Some(e),
-            Error::JsonRpc(e) => Some(e),
-            Error::HexToArray(e) => Some(e),
-            Error::Json(e) => Some(e),
-            Error::Io(e) => Some(e),
-            Error::TryFromInt(e) => Some(e),
-            Error::GetBlockVerboseOne(e) => Some(e),
-            Error::GetBlockHeaderVerbose(e) => Some(e),
-            Error::GetBlockFilter(e) => Some(e),
-            _ => None,
-        }
-    }
-}
+impl std::error::Error for Error {}
 
 // Conversions from other error types
 impl From<jsonrpc::Error> for Error {

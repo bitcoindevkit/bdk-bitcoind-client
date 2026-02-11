@@ -284,6 +284,7 @@ mod test_auth {
     }
 
     #[test]
+    #[ignore = "modifies the local filesystem"]
     fn test_auth_cookie_file_get_user_pass() {
         let temp_dir = std::env::temp_dir();
         let cookie_path = temp_dir.join("test_auth_cookie");
@@ -298,5 +299,15 @@ mod test_auth {
         );
 
         std::fs::remove_file(cookie_path).ok();
+    }
+
+    #[test]
+    fn test_auth_invalid_cookie_file() {
+        let dummy_url = "http://127.0.0.1:18443";
+        let cookie_path = PathBuf::from("/nonexistent/path/to/cookie");
+
+        let result = Client::with_auth(dummy_url, Auth::CookieFile(cookie_path));
+
+        assert!(matches!(result, Err(Error::InvalidCookieFile)));
     }
 }

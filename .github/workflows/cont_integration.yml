@@ -79,6 +79,9 @@ jobs:
       - name: Run doc tests
         run: cargo test ${{ matrix.features }} --doc --verbose
 
+      - name: Run RPC client tests
+        run: cargo test --test test_rpc_client --verbose -- --test-threads=2
+
   # MSRV
   msrv:
     name: MSRV
