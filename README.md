@@ -55,7 +55,7 @@ Bitcoin Core often changes its JSON-RPC response fields (e.g., adding the target
 | ----------------- | --------------------- | -------------------------------------------- | 
 | 30_0 (default)    | v30.x and newer       | Supports latest target and difficulty fields.|
 | 29_0              | v29.x                 | Aligned with v29 schema. |
-| 28_0v             | 28.x and older        | Omits newer fields |
+| 28_0             | v28.x and older        | Omits newer fields |
 
 
 ### Development and Testing
