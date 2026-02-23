@@ -63,7 +63,7 @@ pub struct Client {
 }
 
 impl Client {
-    /// Creates a client connection to a bitcoind JSON-RPC server with authentication
+    /// Creates a client connection to a bitcoind JSON-RPC server with authentication.
     ///
     /// Requires authentication via username/password or cookie file.
     /// For connections without authentication, use `with_transport` instead.
@@ -71,7 +71,7 @@ impl Client {
     /// # Arguments
     ///
     /// * `url` - URL of the RPC server
-    /// * `auth` - authentication method (`UserPass` or `CookieFile`).
+    /// * `auth` - authentication method (`UserPass` or `CookieFile`)
     ///
     /// # Errors
     ///
@@ -109,7 +109,7 @@ impl Client {
         }
     }
 
-    /// Calls the underlying RPC `method` with given `args` list
+    /// Calls the underlying RPC `method` with the given`args`.
     ///
     /// This is the generic function used by all specific RPC methods.
     pub fn call<T>(&self, method: &str, args: &[serde_json::Value]) -> Result<T, Error>
@@ -124,9 +124,9 @@ impl Client {
     }
 }
 
-/// `Bitcoind` RPC methods implementation for `Client`
+/// `bitcoind` RPC methods implementation for `Client`.
 impl Client {
-    /// Retrieves the raw block data for a given block hash (verbosity 0)
+    /// Retrieves the raw block data for a given block hash (verbosity 0).
     ///
     /// # Arguments
     ///
@@ -140,7 +140,7 @@ impl Client {
             .and_then(|block_hex| deserialize_hex(&block_hex).map_err(Error::DecodeHex))
     }
 
-    /// Retrieves the hash of the tip of the best block chain.
+    /// Retrieves the hash of the best chain's block.
     ///
     /// # Returns
     ///
@@ -150,7 +150,7 @@ impl Client {
             .and_then(|blockhash_hex| blockhash_hex.parse().map_err(Error::HexToArray))
     }
 
-    /// Retrieves the number of blocks in the longest chain
+    /// Retrieves the number of blocks in the longest chain.
     ///
     /// # Returns
     ///
@@ -162,7 +162,7 @@ impl Client {
             .map_err(Error::TryFromInt)
     }
 
-    /// Retrieves the block hash at a given height
+    /// Retrieves the ['BlockHash'] of the block at `height`.
     ///
     /// # Arguments
     ///
@@ -170,13 +170,13 @@ impl Client {
     ///
     /// # Returns
     ///
-    /// The `BlockHash` for the given height
+    /// The [`BlockHash`] of the block at `height`
     pub fn get_block_hash(&self, height: u32) -> Result<BlockHash, Error> {
         self.call::<String>("getblockhash", &[json!(height)])
             .and_then(|blockhash_hex| blockhash_hex.parse().map_err(Error::HexToArray))
     }
 
-    /// Retrieve the `basic` BIP 157 content filter for a particular block
+    /// Retrieve the Compact Block Filter (BIP-0158) with type `basic` for the block given its `Blockhash`.
     ///
     /// # Arguments
     ///
@@ -184,14 +184,14 @@ impl Client {
     ///
     /// # Returns
     ///
-    /// The `GetBlockFilter` structure containing the filter data
+    /// The `GetBlockFilter` structure containing the filter data for the block
     pub fn get_block_filter(&self, block_hash: &BlockHash) -> Result<GetBlockFilter, Error> {
         let block_filter: v30::GetBlockFilter =
             self.call("getblockfilter", &[json!(block_hash)])?;
         block_filter.into_model().map_err(Error::GetBlockFilter)
     }
 
-    /// Retrieves the raw block header for a given block hash.
+    /// Retrieves the `Header` for a `Block` given its `BlockHash`.
     ///
     /// # Arguments
     ///
@@ -205,7 +205,7 @@ impl Client {
             .and_then(|header_hex: String| deserialize_hex(&header_hex).map_err(Error::DecodeHex))
     }
 
-    /// Retrieves the transaction IDs of all transactions currently in the mempool
+    /// Retrieves the `Txid`s for all transactions in the mempool.
     ///
     /// # Returns
     ///
@@ -215,7 +215,7 @@ impl Client {
             .map(|txids| txids.0)
     }
 
-    /// Retrieves the raw transaction data for a given transaction ID
+    /// Retrieves the raw transaction data for a given transaction ID.
     ///
     /// # Arguments
     ///
