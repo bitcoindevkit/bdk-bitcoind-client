@@ -3,8 +3,12 @@
 use bitcoin::{consensus::encode::FromHexError, hex::HexToArrayError};
 #[cfg(feature = "28_0")]
 use corepc_types::v17::{GetBlockHeaderVerboseError, GetBlockVerboseOneError};
+#[cfg(feature = "28_0")]
+use corepc_types::v19::GetBlockchainInfoError;
 #[cfg(not(feature = "28_0"))]
-use corepc_types::v30::{GetBlockHeaderVerboseError, GetBlockVerboseOneError};
+use corepc_types::v30::{
+    GetBlockHeaderVerboseError, GetBlockVerboseOneError, GetBlockchainInfoError,
+};
 use corepc_types::{bitcoin, v30::GetBlockFilterError};
 use jsonrpc::serde_json;
 use std::{fmt, io, num::TryFromIntError};
@@ -26,6 +30,9 @@ pub enum Error {
 
     /// Error modeling [`GetBlockFilter`](corepc_types::model::GetBlockFilter)
     GetBlockFilter(GetBlockFilterError),
+
+    /// Error modeling [`GetBlockchainInfo`](corepc_types::model::GetBlockchainInfo).
+    GetBlockchainInfo(GetBlockchainInfoError),
 
     /// Invalid or corrupted cookie file.
     InvalidCookieFile,
@@ -56,6 +63,7 @@ impl fmt::Display for Error {
             Error::GetBlockVerboseOne(e) => write!(f, "block verbose error: {e}"),
             Error::GetBlockHeaderVerbose(e) => write!(f, "block header verbose error: {e}"),
             Error::GetBlockFilter(e) => write!(f, "block filter error: {e}"),
+            Error::GetBlockchainInfo(e) => write!(f, "getblockchaininfo error: {e}"),
             Error::InvalidCookieFile => write!(f, "invalid or missing cookie file"),
             Error::InvalidUrl(e) => write!(f, "invalid RPC URL: {e}"),
             Error::HexToArray(e) => write!(f, "hash parsing error: {e}"),

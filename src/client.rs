@@ -263,6 +263,26 @@ impl Client {
             self.call("getblock", &[json!(block_hash), json!(1)])?;
         block_info.into_model().map_err(Error::GetBlockVerboseOne)
     }
+
+    /// Retrieves the prune height of the `bitcoind` instance this client is connected to.
+    ///
+    /// # Returns
+    ///
+    /// The prune height of the `bitcoind` instance, as an `Option<u32>`.
+    pub fn get_prune_height(&self) -> Result<Option<u32>, Error> {
+        let res = {
+            let res: v30::GetBlockchainInfo = self.call("getblockchaininfo", &[])?;
+            res.into_model().map_err(Error::GetBlockchainInfo)?
+        };
+
+        if res.pruned {
+            Ok(Some(
+                res.prune_height.expect("pruned=true implies a pruneheight"),
+            ))
+        } else {
+            Ok(None)
+        }
+    }
 }
 
 #[cfg(test)]
