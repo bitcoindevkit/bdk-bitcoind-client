@@ -29,7 +29,7 @@ jobs:
               uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
 
             - name: Setup cargo-rbmt
-              uses: rust-bitcoin/rust-bitcoin-maintainer-tools/.github/actions/setup-rbmt@6560b728ae6a81af9d92713b630ba26772fbd970
+              uses: rust-bitcoin/rust-bitcoin-maintainer-tools/.github/actions/setup-rbmt@2a517aea4fbd928c5f0025abf63bc2677cb25599
 
             - name: "Run ${{ matrix.task }}"
               run: cargo rbmt ${{ matrix.task }}
@@ -57,7 +57,7 @@ jobs:
               uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
 
             - name: Setup cargo-rbmt
-              uses: rust-bitcoin/rust-bitcoin-maintainer-tools/.github/actions/setup-rbmt@6560b728ae6a81af9d92713b630ba26772fbd970
+              uses: rust-bitcoin/rust-bitcoin-maintainer-tools/.github/actions/setup-rbmt@2a517aea4fbd928c5f0025abf63bc2677cb25599
 
             - name: Run tests
               run: cargo rbmt test --toolchain ${{ matrix.toolchain }} --lock-file ${{ matrix.lockfile }}
