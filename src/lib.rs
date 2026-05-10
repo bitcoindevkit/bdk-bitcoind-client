@@ -9,9 +9,8 @@
 mod client;
 mod error;
 
-pub use client::{Auth, Client};
-pub use error::{Error, Result};
+pub use client::*;
+pub use error::*;
 
-pub use jsonrpc;
-// Re-export corepc_types
 pub use corepc_types;
+pub use jsonrpc;

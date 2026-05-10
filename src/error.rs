@@ -7,15 +7,8 @@ use core::num::TryFromIntError;
 use std::io;
 
 use bitcoin::{consensus::encode::FromHexError, hex::HexToArrayError};
-#[cfg(feature = "28_0")]
-use corepc_types::v17::{GetBlockHeaderVerboseError, GetBlockVerboseOneError};
-#[cfg(not(feature = "28_0"))]
-use corepc_types::v30::{GetBlockHeaderVerboseError, GetBlockVerboseOneError};
-use corepc_types::{bitcoin, v30::GetBlockFilterError};
+use corepc_types::bitcoin;
 use jsonrpc::serde_json;
-
-/// Result type alias for the RPC client.
-pub type Result<T> = std::result::Result<T, Error>;
 
 /// Errors that can occur when using the Bitcoin RPC client.
 #[derive(Debug)]
@@ -23,14 +16,8 @@ pub enum Error {
     /// Hex deserialization error
     DecodeHex(FromHexError),
 
-    /// Error converting `GetBlockVersboseOne` type into the model type
-    GetBlockVerboseOne(GetBlockVerboseOneError),
-
-    /// Error modeling [`GetBlockHeaderVerbose`](corepc_types::model::GetBlockHeaderVerbose).
-    GetBlockHeaderVerbose(GetBlockHeaderVerboseError),
-
-    /// Error modeling [`GetBlockFilter`](corepc_types::model::GetBlockFilter)
-    GetBlockFilter(GetBlockFilterError),
+    /// Error converting a version-specific RPC type into the model type.
+    Model(Box<dyn core::error::Error + Send + Sync + 'static>),
 
     /// Invalid or corrupted cookie file.
     InvalidCookieFile,
@@ -58,9 +45,7 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Error::DecodeHex(e) => write!(f, "hex deserialization error: {e}"),
-            Error::GetBlockVerboseOne(e) => write!(f, "block verbose error: {e}"),
-            Error::GetBlockHeaderVerbose(e) => write!(f, "block header verbose error: {e}"),
-            Error::GetBlockFilter(e) => write!(f, "block filter error: {e}"),
+            Error::Model(e) => write!(f, "model conversion error: {e}"),
             Error::InvalidCookieFile => write!(f, "invalid or missing cookie file"),
             Error::InvalidUrl(e) => write!(f, "invalid RPC URL: {e}"),
             Error::HexToArray(e) => write!(f, "hash parsing error: {e}"),
@@ -73,6 +58,16 @@ impl fmt::Display for Error {
 }
 
 impl core::error::Error for Error {}
+
+impl Error {
+    /// Converts `e` to a [`Error::Model`] error.
+    pub(crate) fn model<E>(e: E) -> Self
+    where
+        E: core::error::Error + Send + Sync + 'static,
+    {
+        Self::Model(Box::new(e))
+    }
+}
 
 // Conversions from other error types
 impl From<jsonrpc::Error> for Error {
@@ -102,12 +97,6 @@ impl From<io::Error> for Error {
 impl From<TryFromIntError> for Error {
     fn from(e: TryFromIntError) -> Self {
         Error::TryFromInt(e)
-    }
-}
-
-impl From<GetBlockVerboseOneError> for Error {
-    fn from(e: GetBlockVerboseOneError) -> Self {
-        Error::GetBlockVerboseOne(e)
     }
 }
 
