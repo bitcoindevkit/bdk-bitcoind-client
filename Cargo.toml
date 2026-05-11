@@ -26,7 +26,7 @@ hex-conservative = { version = "0.2.1" } # blame: corepc-node
 
 [dev-dependencies]
 anyhow = { version = "1.0.66" }
-bitcoind = { version = "0.37.0", features = ["download", "29_0"] }
+bitcoind = { version = "0.38.0", features = ["download", "29_0"] }
 
 # These pins are needed for `Cargo-minimal.lock`:
 tar = { version = "0.4.43" } # blame: corepc-node
