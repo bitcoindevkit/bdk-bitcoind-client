@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use bdk_bitcoind_client::{Auth, Client};
+use bdk_bitcoind_client::bitreq::{Auth, Client};
 use bitcoin::{Address, BlockHash};
 use bitcoind::{BitcoinD, Conf, exe_path};
 use corepc_types::bitcoin;
@@ -11,7 +11,7 @@ use corepc_types::bitcoin;
 /// a running [`bitcoind::BitcoinD`] instance.
 #[derive(Debug)]
 pub struct TestEnv {
-    /// [`bdk_bitcoind_client::Client`]
+    /// [`bdk_bitcoind_client::bitreq::Client`]
     pub client: Client,
     /// [`bitcoind::BitcoinD`]
     pub bitcoind: BitcoinD,
@@ -38,7 +38,7 @@ impl TestEnv {
         let rpc_url = bitcoind.rpc_url();
         let cookie_file = &bitcoind.params.cookie_file;
         let auth = Auth::CookieFile(cookie_file.clone());
-        let client = Client::with_auth(&rpc_url, auth)?;
+        let client = Client::with_auth_timeout(&rpc_url, auth, std::time::Duration::from_secs(15))?;
 
         Ok(Self { client, bitcoind })
     }

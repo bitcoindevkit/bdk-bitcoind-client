@@ -47,6 +47,7 @@ name = "bdk_bitcoind_client"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bdk_bitcoind_client",
  "bitcoind",
  "corepc-types",
  "filetime",

@@ -12,14 +12,15 @@ edition = "2024"
 rust-version = "1.85.0"
 
 [dependencies]
-corepc-types = { version = "0.12.0", features = ["default"]}
-jsonrpc = { version = "0.20.0", features = ["bitreq_http"] }
+corepc-types = { version = "0.12.0", features = ["default"], optional = true }
+jsonrpc = { version = "0.20.0", default-features = false }
 
 # These pins are needed for `Cargo-minimal.lock`:
 hex-conservative = { version = "0.2.1" } # blame: corepc-node
 
 [dev-dependencies]
 anyhow = { version = "1.0.66" }
+bdk_bitcoind_client = { path = ".", default-features = false, features = ["bitreq", "29_0"] }
 bitcoind = { version = "0.38.0", features = ["download", "29_0"] }
 
 # These pins are needed for `Cargo-minimal.lock`:
@@ -28,7 +29,8 @@ filetime = { version = "0.2.8" } # blame: corepc-node
 log = { version = "0.4.14" } # blame: corepc-node
 
 [features]
-default = ["28_0"]
+default = ["28_0", "bitreq"]
+bitreq = ["dep:corepc-types", "jsonrpc/bitreq_http"]
 30_0 = ["29_0"]
 29_0 = ["28_0"]
 28_0 = []

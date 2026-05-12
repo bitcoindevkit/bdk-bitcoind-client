@@ -2,18 +2,24 @@
 
 //! Bitcoin Core RPC client library.
 //!
-//! This crate provides a Rust client for interacting with Bitcoin Core's JSON-RPC interface.
-//! It supports multiple authentication methods and provides a type-safe interface for
-//! making RPC calls to a Bitcoin Core daemon.
+//! The top-level [`Client`] is transport-agnostic (sans-io): callers supply
+//! the transport at each call site via a `send_fn` closure.
+//!
+//! For a batteries-included HTTP client backed by the `bitreq` transport,
+//! enable the `bitreq` feature and use [`bitreq::Client`].
 
 mod client;
 mod error;
+mod rpc;
 
 pub use client::*;
 pub use error::*;
+pub use rpc::*;
 
-#[cfg(all(feature = "28_0", not(feature = "29_0")))]
-pub mod v28;
+#[cfg(feature = "bitreq")]
+pub mod bitreq;
 
-pub use corepc_types;
 pub use jsonrpc;
+
+#[cfg(feature = "bitreq")]
+pub use corepc_types;
