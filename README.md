@@ -1,11 +1,11 @@
-# bdk-bitcoind-client
+# bitcoind-client
 
 <p>
-    <!-- <a href="https://crates.io/crates/bdk-bitcoind-client"><img src="https://img.shields.io/crates/v/bdk-bitcoind-client.svg"/></a> -->
-    <!-- <a href="https://docs.rs/bdk-bitcoind-client"><img src="https://img.shields.io/badge/docs.rs-bdk-bitcoind-client-orange"/></a> -->
+    <!-- <a href="https://crates.io/crates/bitcoind-client"><img src="https://img.shields.io/crates/v/bitcoind-client.svg"/></a> -->
+    <!-- <a href="https://docs.rs/bitcoind-client"><img src="https://img.shields.io/badge/docs.rs-bitcoind-client-orange"/></a> -->
     <a href="https://blog.rust-lang.org/2025/02/20/Rust-1.85.0/"><img src="https://img.shields.io/badge/rustc-1.85.0%2B-orange.svg"/></a>
-    <a href="https://github.com/bitcoindevkit/bdk-bitcoind-client/blob/master/LICENSE"><img src="https://img.shields.io/badge/License-MIT%2FApache--2.0-red.svg"/></a>
-    <a href="https://github.com/bitcoindevkit/bdk-bitcoind-client/actions/workflows/cont_integration.yml"><img src="https://github.com/bitcoindevkit/bdk-bitcoind-client/actions/workflows/cont_integration.yml/badge.svg"></a>
+    <a href="https://github.com/bitcoindevkit/bitcoind-client/blob/master/LICENSE"><img src="https://img.shields.io/badge/License-MIT%2FApache--2.0-red.svg"/></a>
+    <a href="https://github.com/bitcoindevkit/bitcoind-client/actions/workflows/cont_integration.yml"><img src="https://github.com/bitcoindevkit/bitcoind-client/actions/workflows/cont_integration.yml/badge.svg"></a>
 </p>
 
 A minimal `bitcoind` RPC client custom built for [BDK](https://github.com/bitcoindevkit/bdk).
@@ -30,7 +30,7 @@ Add this to your `Cargo.toml` manifest to use this crate with
 the latest Bitcoin Core version (currently v30.0) as the backend:
 
 ```toml
-bdk-bitcoind-client = { version = "0.1.0" }
+bitcoind-client = { version = "0.1.0" }
 ```
 
 Alternatively, add this to your `Cargo.toml` manifest to use this crate
@@ -38,16 +38,16 @@ with a specific Bitcoin Core version as the backend (v28.0 or v29.0):
 
 ```toml
 # Bitcoin Core v29.0
-bdk-bitcoind-client = { version = "0.1.0", default-features = false, features = ["29_0"] }
+bitcoind-client = { version = "0.1.0", default-features = false, features = ["29_0"] }
 
 # Bitcoin Core v28.0
-bdk-bitcoind-client = { version = "0.1.0", default-features = false, features = ["28_0"] }
+bitcoind-client = { version = "0.1.0", default-features = false, features = ["28_0"] }
 ```
 
 ## Quick Start
 
 ```rust
-use bdk_bitcoind_client::{Auth, Client};
+use bitcoind_client::{Auth, Client};
 use std::path::PathBuf;
 fn main() -> anyhow::Result<()> {
     // Define how to authenticate with `bitcoind` (Cookie File or User/Pass)
@@ -100,11 +100,11 @@ Run `just` to see available commands:
 
 ```console
 ~$ just
-> bdk-bitcoind-client
+> bitcoind-client
 > An experimental `bitcoind` RPC client for BDK
 
 Available recipes:
-    build                # Build the `bdk-bitcoind-client` [alias: b]
+    build                # Build the `bitcoind-client` [alias: b]
     check                # Check code formatting, compilation, and linting [alias: c]
     check-features       # Check that all feature combinations compile [alias: cf]
     check-sigs           # Checks whether all commits in this branch are PGP-signed [alias: cs]

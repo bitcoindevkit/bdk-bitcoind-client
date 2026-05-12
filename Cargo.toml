@@ -1,10 +1,10 @@
 [package]
 version = "0.1.0"
-name = "bdk_bitcoind_client"
+name = "bitcoind_client"
 description = "A minimal `bitcoind` RPC client custom built for BDK"
 authors = ["Bitcoin Dev Kit Developers"]
-repository = "https://github.com/bitcoindevkit/bdk-bitcoind-client"
-documentation = "https://docs.rs/bdk-bitcoind-client"
+repository = "https://github.com/bitcoindevkit/bitcoind-client"
+documentation = "https://docs.rs/bitcoind-client"
 homepage = "https://bitcoindevkit.org"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
