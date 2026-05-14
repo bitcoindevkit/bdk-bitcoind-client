@@ -12,12 +12,12 @@ alias t := test
 alias tv := test-version
 
 _default:
-    @echo "> bdk-bitcoind-client"
+    @echo "> bitcoind-client"
     @echo "> An experimental \`bitcoind\` RPC client for BDK"
     @echo ""
     @just --list
 
-[doc: "Build the `bdk-bitcoind-client`"]
+[doc: "Build the `bitcoind-client`"]
 build:
     cargo build
 

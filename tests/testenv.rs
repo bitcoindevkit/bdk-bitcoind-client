@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use bdk_bitcoind_client::{Auth, Client};
 use bitcoin::{Address, BlockHash};
 use bitcoind::{BitcoinD, Conf, exe_path};
+use bitcoind_client::{Auth, Client};
 use corepc_types::bitcoin;
 
 /// Test environment for running integration tests.
@@ -11,7 +11,7 @@ use corepc_types::bitcoin;
 /// a running [`bitcoind::BitcoinD`] instance.
 #[derive(Debug)]
 pub struct TestEnv {
-    /// [`bdk_bitcoind_client::Client`]
+    /// [`bitcoind_client::Client`]
     pub client: Client,
     /// [`bitcoind::BitcoinD`]
     pub bitcoind: BitcoinD,
