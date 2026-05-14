@@ -68,6 +68,33 @@ impl Client {
         Ok(response.result()?)
     }
 
+    /// Execute the RPC asynchronously.
+    pub async fn call_async<T, E, F>(
+        &self,
+        method: &str,
+        params: &[Value],
+        send_fn: F,
+    ) -> Result<T, Error>
+    where
+        T: for<'de> serde::Deserialize<'de>,
+        E: core::error::Error + Send + Sync + 'static,
+        F: AsyncFn(Value) -> Result<Response, E>,
+    {
+        let raw_value = if params.is_empty() {
+            None
+        } else {
+            Some(serde_json::value::to_raw_value(params)?)
+        };
+        let request = self.build_request(method, raw_value.as_deref());
+        let request_id = request.id.clone();
+        let value = serde_json::to_value(request)?;
+        let response = send_fn(value).await.map_err(Error::transport)?;
+        if response.id != request_id {
+            return Err(Error::JsonRpc(jsonrpc::Error::NonceMismatch));
+        }
+        Ok(response.result()?)
+    }
+
     /// Builds a JSON-RPC [`Request`] with an auto-incremented ID.
     fn build_request<'a>(&self, method: &'a str, params: Option<&'a RawValue>) -> Request<'a> {
         let id = self.id.fetch_add(1, Ordering::Relaxed);

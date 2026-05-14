@@ -22,6 +22,8 @@ hex-conservative = { version = "0.2.1" } # blame: corepc-node
 anyhow = { version = "1.0.66" }
 bdk_bitcoind_client = { path = ".", default-features = false, features = ["bitreq", "29_0"] }
 bitcoind = { version = "0.38.0", features = ["download", "29_0"] }
+bitreq = { version = "0.3.5", features = ["async"] }
+tokio = { version = "1", features = ["full"] }
 
 # These pins are needed for `Cargo-minimal.lock`:
 tar = { version = "0.4.43" } # blame: corepc-node
