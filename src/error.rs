@@ -3,55 +3,69 @@
 //! Error types for the Bitcoin RPC client.
 
 use core::fmt;
-use core::num::TryFromIntError;
+#[cfg(feature = "bitreq")]
 use std::io;
 
-use bitcoin::{consensus::encode::FromHexError, hex::HexToArrayError};
-use corepc_types::bitcoin;
+#[cfg(feature = "bitreq")]
+use corepc_types::bitcoin::{consensus::encode::FromHexError, hex::HexToArrayError};
 use jsonrpc::serde_json;
 
 /// Errors that can occur when using the Bitcoin RPC client.
 #[derive(Debug)]
 pub enum Error {
-    /// Hex deserialization error
-    DecodeHex(FromHexError),
-
-    /// Error converting a version-specific RPC type into the model type.
-    Model(Box<dyn core::error::Error + Send + Sync + 'static>),
-
-    /// Invalid or corrupted cookie file.
-    InvalidCookieFile,
-
-    /// The provided URL is syntactically incorrect
-    InvalidUrl(String),
-
     /// JSON-RPC error from the server.
     JsonRpc(jsonrpc::Error),
-
-    /// Hash parsing error.
-    HexToArray(HexToArrayError),
 
     /// JSON serialization/deserialization error.
     Json(serde_json::Error),
 
+    /// Hex deserialization error.
+    #[cfg(feature = "bitreq")]
+    DecodeHex(FromHexError),
+
+    /// Error converting a version-specific RPC type into the model type.
+    #[cfg(feature = "bitreq")]
+    Model(Box<dyn core::error::Error + Send + Sync + 'static>),
+
+    /// Invalid or corrupted cookie file.
+    #[cfg(feature = "bitreq")]
+    InvalidCookieFile,
+
+    /// The provided URL is syntactically incorrect.
+    #[cfg(feature = "bitreq")]
+    InvalidUrl(String),
+
+    /// Hash parsing error.
+    #[cfg(feature = "bitreq")]
+    HexToArray(HexToArrayError),
+
     /// I/O error (e.g., reading cookie file, network issues).
+    #[cfg(feature = "bitreq")]
     Io(io::Error),
 
     /// Error when converting an integer type to a smaller type due to overflow.
-    TryFromInt(TryFromIntError),
+    #[cfg(feature = "bitreq")]
+    TryFromInt(core::num::TryFromIntError),
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Error::DecodeHex(e) => write!(f, "hex deserialization error: {e}"),
-            Error::Model(e) => write!(f, "model conversion error: {e}"),
-            Error::InvalidCookieFile => write!(f, "invalid or missing cookie file"),
-            Error::InvalidUrl(e) => write!(f, "invalid RPC URL: {e}"),
-            Error::HexToArray(e) => write!(f, "hash parsing error: {e}"),
             Error::JsonRpc(e) => write!(f, "JSON-RPC error: {e}"),
             Error::Json(e) => write!(f, "JSON error: {e}"),
+            #[cfg(feature = "bitreq")]
+            Error::DecodeHex(e) => write!(f, "hex deserialization error: {e}"),
+            #[cfg(feature = "bitreq")]
+            Error::Model(e) => write!(f, "model conversion error: {e}"),
+            #[cfg(feature = "bitreq")]
+            Error::InvalidCookieFile => write!(f, "invalid or missing cookie file"),
+            #[cfg(feature = "bitreq")]
+            Error::InvalidUrl(e) => write!(f, "invalid RPC URL: {e}"),
+            #[cfg(feature = "bitreq")]
+            Error::HexToArray(e) => write!(f, "hash parsing error: {e}"),
+            #[cfg(feature = "bitreq")]
             Error::Io(e) => write!(f, "I/O error: {e}"),
+            #[cfg(feature = "bitreq")]
             Error::TryFromInt(e) => write!(f, "integer conversion overflow: {e}"),
         }
     }
@@ -60,16 +74,26 @@ impl fmt::Display for Error {
 impl core::error::Error for Error {}
 
 impl Error {
-    /// Converts `e` to a [`Error::Model`] error.
+    /// Converts `e` to an [`Error::Model`] error.
+    #[cfg(feature = "bitreq")]
     pub(crate) fn model<E>(e: E) -> Self
     where
         E: core::error::Error + Send + Sync + 'static,
     {
         Self::Model(Box::new(e))
     }
+
+    /// Wraps `e` as a [`jsonrpc::Error::Transport`] inside [`Error::JsonRpc`].
+    pub(crate) fn transport<E>(e: E) -> Self
+    where
+        E: core::error::Error + Send + Sync + 'static,
+    {
+        Self::JsonRpc(jsonrpc::Error::Transport(Box::new(e)))
+    }
 }
 
-// Conversions from other error types
+// Conversions from other error types.
+
 impl From<jsonrpc::Error> for Error {
     fn from(e: jsonrpc::Error) -> Self {
         Error::JsonRpc(e)
@@ -82,24 +106,28 @@ impl From<serde_json::Error> for Error {
     }
 }
 
+#[cfg(feature = "bitreq")]
 impl From<HexToArrayError> for Error {
     fn from(e: HexToArrayError) -> Self {
         Error::HexToArray(e)
     }
 }
 
+#[cfg(feature = "bitreq")]
 impl From<io::Error> for Error {
     fn from(e: io::Error) -> Self {
         Error::Io(e)
     }
 }
 
-impl From<TryFromIntError> for Error {
-    fn from(e: TryFromIntError) -> Self {
+#[cfg(feature = "bitreq")]
+impl From<core::num::TryFromIntError> for Error {
+    fn from(e: core::num::TryFromIntError) -> Self {
         Error::TryFromInt(e)
     }
 }
 
+#[cfg(feature = "bitreq")]
 impl From<FromHexError> for Error {
     fn from(e: FromHexError) -> Self {
         Error::DecodeHex(e)
