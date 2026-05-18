@@ -6,7 +6,7 @@
 
 use core::str::FromStr;
 
-use bdk_bitcoind_client::{Auth, Client, Error};
+use bdk_bitcoind_client::bitreq::{Auth, Client};
 use corepc_types::bitcoin::{Amount, BlockHash, Txid};
 
 mod testenv;
@@ -16,20 +16,21 @@ use testenv::TestEnv;
 #[test]
 fn test_invalid_credentials() {
     let env = TestEnv::setup().unwrap();
-    let client = Client::with_auth(
+    let client = Client::with_auth_timeout(
         &env.bitcoind.rpc_url(),
         Auth::UserPass("wrong".to_string(), "credentials".to_string()),
+        std::time::Duration::from_secs(15),
     )
     .expect("client creation should succeed");
 
-    let result: Result<BlockHash, Error> = client.get_best_block_hash();
+    let result = client.get_best_block_hash();
 
     assert!(result.is_err());
 }
 
 #[test]
 fn test_client_with_custom_transport() {
-    use jsonrpc::http::bitreq_http::Builder;
+    use jsonrpc::bitreq_http::Builder;
 
     let env = TestEnv::setup().unwrap();
 
@@ -155,6 +156,7 @@ fn test_get_block_after_mining() {
 }
 
 #[test]
+#[cfg(feature = "29_0")]
 fn test_get_block_verbose() {
     let env = TestEnv::setup().unwrap();
 
@@ -202,6 +204,7 @@ fn test_get_block_header() {
 }
 
 #[test]
+#[cfg(feature = "29_0")]
 fn test_get_block_header_verbose() {
     let TestEnv {
         client,

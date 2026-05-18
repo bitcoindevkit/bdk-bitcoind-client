@@ -1,8 +1,8 @@
 # bdk-bitcoind-client
 
 <p>
-    <!-- <a href="https://crates.io/crates/bdk-bitcoind-client"><img src="https://img.shields.io/crates/v/bdk-bitcoind-client.svg"/></a> -->
-    <!-- <a href="https://docs.rs/bdk-bitcoind-client"><img src="https://img.shields.io/badge/docs.rs-bdk-bitcoind-client-orange"/></a> -->
+    <a href="https://crates.io/crates/bdk_bitcoind_client"><img src="https://img.shields.io/crates/v/bdk_bitcoind_client.svg"/></a>
+    <a href="https://docs.rs/bdk_bitcoind_client"><img src="https://img.shields.io/badge/docs.rs-bdk_bitcoind_client-orange.svg"/></a>
     <a href="https://blog.rust-lang.org/2025/02/20/Rust-1.85.0/"><img src="https://img.shields.io/badge/rustc-1.85.0%2B-orange.svg"/></a>
     <a href="https://github.com/bitcoindevkit/bdk-bitcoind-client/blob/master/LICENSE"><img src="https://img.shields.io/badge/License-MIT%2FApache--2.0-red.svg"/></a>
     <a href="https://github.com/bitcoindevkit/bdk-bitcoind-client/actions/workflows/cont_integration.yml"><img src="https://github.com/bitcoindevkit/bdk-bitcoind-client/actions/workflows/cont_integration.yml/badge.svg"></a>
@@ -53,9 +53,10 @@ fn main() -> anyhow::Result<()> {
     // Define how to authenticate with `bitcoind` (Cookie File or User/Pass)
     let auth = Auth::CookieFile(PathBuf::from("/path/to/regtest/.cookie"));
     let auth = Auth::UserPass("user".to_string(), "pass".to_string());
+    let timeout = std::time::Duration::from_secs(15);
 
     // Instantiate a JSON-RPC `Client`
-    let client = Client::with_auth("http://127.0.0.1:18443", auth)?;
+    let client = Client::with_auth_timeout("http://127.0.0.1:18443", auth, timeout)?;
 
     // Perform blockchain queries to `bitcoind` using the `Client`
     let block_count = client.get_block_count()?;
