@@ -5,9 +5,12 @@
 //! These tests require a running Bitcoin Core node in regtest mode. To setup, refer to [`bitcoind`].
 
 use core::str::FromStr;
+use std::collections::BTreeMap;
 
 use bdk_bitcoind_client::bitreq::{Auth, Client};
-use corepc_types::bitcoin::{Amount, BlockHash, Txid};
+use corepc_types::bitcoin::{
+    Amount, BlockHash, Network, Transaction, Txid, absolute, transaction::Version,
+};
 
 mod testenv;
 
@@ -311,4 +314,86 @@ fn test_get_block_filter() {
         .expect("failed to get block filter");
 
     assert!(!result.filter.is_empty());
+}
+
+#[test]
+fn test_get_blockchain_info() {
+    let env = TestEnv::setup().unwrap();
+
+    env.mine_blocks(2, None).expect("failed to mine blocks");
+
+    let blockchain_info = env
+        .client
+        .get_blockchain_info()
+        .expect("failed to get blockchain info");
+
+    assert_eq!(blockchain_info.chain, Network::Regtest);
+    assert!(blockchain_info.blocks >= 2);
+
+    let best_hash = env.client.get_best_block_hash().unwrap();
+    assert_eq!(blockchain_info.best_block_hash, best_hash);
+}
+
+#[test]
+fn test_send_raw_transaction() {
+    let env = TestEnv::setup().unwrap();
+
+    env.mine_blocks(101, None).expect("failed to mine blocks");
+
+    let recipient_address = env.bitcoind.client.new_address().unwrap();
+
+    let mut outputs = BTreeMap::new();
+    outputs.insert(recipient_address, Amount::from_btc(0.001).unwrap());
+
+    let funded_psbt = env
+        .bitcoind
+        .client
+        .wallet_create_funded_psbt(vec![], vec![outputs])
+        .unwrap()
+        .into_model()
+        .unwrap();
+
+    let signed_psbt = env
+        .bitcoind
+        .client
+        .wallet_process_psbt(&funded_psbt.psbt)
+        .unwrap()
+        .into_model()
+        .unwrap();
+
+    assert!(signed_psbt.complete, "PSBT was not completely signed");
+
+    let finalized = env
+        .bitcoind
+        .client
+        .finalize_psbt(&signed_psbt.psbt)
+        .unwrap()
+        .into_model()
+        .unwrap();
+
+    let raw_hex = finalized.psbt.unwrap().extract_tx().unwrap();
+
+    let txid = env
+        .client
+        .send_raw_transaction(&raw_hex)
+        .expect("failed to broadcast transaction");
+
+    let mempool = env.client.get_raw_mempool().expect("failed to get mempool");
+    assert!(mempool.contains(&txid));
+}
+
+#[test]
+fn test_send_raw_transaction_invalid() {
+    let env = TestEnv::setup().unwrap();
+
+    let invalid_tx = Transaction {
+        version: Version::ONE,
+        lock_time: absolute::LockTime::ZERO,
+        input: vec![],
+        output: vec![],
+    };
+
+    let result = env.client.send_raw_transaction(&invalid_tx);
+
+    assert!(result.is_err(), "Expected transaction to be rejected");
 }

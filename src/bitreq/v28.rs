@@ -5,7 +5,7 @@
 use bitcoin::BlockHash;
 use corepc_types::{
     bitcoin,
-    model::{GetBlockHeaderVerbose, GetBlockVerboseOne},
+    model::{GetBlockHeaderVerbose, GetBlockVerboseOne, GetBlockchainInfo},
     v28,
 };
 use jsonrpc::serde_json::json;
@@ -45,5 +45,15 @@ impl Client {
         let block_info: v28::GetBlockVerboseOne =
             self.call(Rpc::GetBlock, &[json!(block_hash), json!(1)])?;
         block_info.into_model().map_err(Error::model)
+    }
+
+    /// Retrieves information about the blockchain state.
+    ///
+    /// # Returns
+    ///
+    /// State information as a `GetBlockchainInfo` struct.
+    pub fn get_blockchain_info(&self) -> Result<GetBlockchainInfo, Error> {
+        let info: v28::GetBlockchainInfo = self.call(Rpc::GetBlockchainInfo, &[])?;
+        info.into_model().map_err(Error::model)
     }
 }

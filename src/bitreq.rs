@@ -12,7 +12,9 @@ use std::{
 
 use corepc_types::{
     bitcoin::{
-        Block, BlockHash, Transaction, Txid, block::Header, consensus::encode::deserialize_hex,
+        Block, BlockHash, Transaction, Txid,
+        block::Header,
+        consensus::encode::{deserialize_hex, serialize_hex},
     },
     model, v30,
 };
@@ -226,6 +228,21 @@ impl Client {
         self.call::<String>(Rpc::GetRawTransaction, &[json!(txid)])
             .and_then(|tx_hex| deserialize_hex(&tx_hex).map_err(Error::DecodeHex))
     }
+
+    /// Submits a raw transaction to the network.
+    ///
+    /// # Arguments
+    ///
+    /// * `tx`: The transaction to broadcast.
+    ///
+    /// # Returns
+    ///
+    /// The transaction ID (`Txid`) of the broadcasted transaction.
+    pub fn send_raw_transaction(&self, tx: &Transaction) -> Result<Txid, Error> {
+        let hex_tx = serialize_hex(tx);
+        let txid: Txid = self.call(Rpc::SendRawTransaction, &[json!(hex_tx)])?;
+        Ok(txid)
+    }
 }
 
 #[cfg(feature = "29_0")]
@@ -264,6 +281,16 @@ impl Client {
         let block_info: v30::GetBlockVerboseOne =
             self.call(Rpc::GetBlock, &[json!(block_hash), json!(1)])?;
         block_info.into_model().map_err(Error::model)
+    }
+
+    /// Retrieves information about the blockchain state.
+    ///
+    /// # Returns
+    ///
+    /// State information as a `GetBlockchainInfo` struct.
+    pub fn get_blockchain_info(&self) -> Result<model::GetBlockchainInfo, Error> {
+        let info: v30::GetBlockchainInfo = self.call(Rpc::GetBlockchainInfo, &[])?;
+        info.into_model().map_err(Error::model)
     }
 }
 

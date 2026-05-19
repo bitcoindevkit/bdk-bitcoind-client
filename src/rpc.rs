@@ -30,6 +30,10 @@ pub enum Rpc {
     GetRawMempool,
     /// `getrawtransaction` — returns raw transaction data for a given txid.
     GetRawTransaction,
+    /// `getblockchaininfo` - returns information about the blockchain state.
+    GetBlockchainInfo,
+    /// `sendrawtransaction` - send raw transaction to the network.
+    SendRawTransaction,
 }
 
 impl core::fmt::Display for Rpc {
@@ -43,6 +47,8 @@ impl core::fmt::Display for Rpc {
             Self::GetBlockHeader => "getblockheader",
             Self::GetRawMempool => "getrawmempool",
             Self::GetRawTransaction => "getrawtransaction",
+            Self::GetBlockchainInfo => "getblockchaininfo",
+            Self::SendRawTransaction => "sendrawtransaction",
         };
         write!(f, "{s}")
     }
@@ -62,5 +68,7 @@ mod tests {
         assert_eq!(Rpc::GetBlockHeader.to_string(), "getblockheader");
         assert_eq!(Rpc::GetRawMempool.to_string(), "getrawmempool");
         assert_eq!(Rpc::GetRawTransaction.to_string(), "getrawtransaction");
+        assert_eq!(Rpc::SendRawTransaction.to_string(), "sendrawtransaction");
+        assert_eq!(Rpc::GetBlockchainInfo.to_string(), "getblockchaininfo");
     }
 }
