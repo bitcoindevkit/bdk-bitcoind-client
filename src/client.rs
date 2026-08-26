@@ -70,8 +70,8 @@ impl Client {
 
     /// Calls an RPC asynchronously using the provided `send_fn`.
     ///
-    /// Builds a JSON-RPC [`Request`], passes it to `send_fn` as a JSON [`Value`],
-    /// and deserializes the [`Response`] to a `T`.
+    /// Builds a JSON-RPC [`Request`], passes it to `send_fn`, and deserializes the
+    /// [`Response`] to a `T`.
     ///
     /// # Errors
     ///
