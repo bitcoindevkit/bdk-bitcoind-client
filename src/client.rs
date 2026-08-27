@@ -68,6 +68,40 @@ impl Client {
         Ok(response.result()?)
     }
 
+    /// Calls an RPC asynchronously using the provided `send_fn`.
+    ///
+    /// Builds a JSON-RPC [`Request`], passes it to `send_fn`, and deserializes the
+    /// [`Response`] to a `T`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if JSON serialization fails, `send_fn` returns an error
+    /// (wrapped as [`Error::JsonRpc`] via a transport error), or the response
+    /// contains a JSON-RPC error.
+    pub async fn call_async<T, E>(
+        &self,
+        method: &str,
+        params: &[Value],
+        send_fn: impl AsyncFn(&Request) -> Result<Response, E>,
+    ) -> Result<T, Error>
+    where
+        T: for<'de> serde::Deserialize<'de>,
+        E: core::error::Error + Send + Sync + 'static,
+    {
+        let raw_value = if params.is_empty() {
+            None
+        } else {
+            Some(serde_json::value::to_raw_value(params)?)
+        };
+        let request = self.build_request(method, raw_value.as_deref());
+        let request_id = request.id.clone();
+        let response = send_fn(&request).await.map_err(Error::transport)?;
+        if response.id != request_id {
+            return Err(Error::JsonRpc(jsonrpc::Error::NonceMismatch));
+        }
+        Ok(response.result()?)
+    }
+
     /// Builds a JSON-RPC [`Request`] with an auto-incremented ID.
     fn build_request<'a>(&self, method: &'a str, params: Option<&'a RawValue>) -> Request<'a> {
         let id = self.id.fetch_add(1, Ordering::Relaxed);
