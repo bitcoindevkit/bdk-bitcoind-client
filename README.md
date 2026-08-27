@@ -117,6 +117,10 @@ Available recipes:
     test-version VERSION # Run tests against a specific Bitcoin Core version: 30_0, 29_0, 28_0 [alias: tv]
 ```
 
+## Security Policy
+
+To report a security issue, please refer to the [security policy](SECURITY.md).
+
 ## Minimum Supported Rust Version (MSRV)
 
 This library should compile with any combination of features on Rust 1.85.0.
