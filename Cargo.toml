@@ -13,7 +13,7 @@ rust-version = "1.85.0"
 
 [dependencies]
 corepc-types = { version = "0.15.0", features = ["default"], optional = true }
-jsonrpc = { version = "0.20.0", default-features = false }
+jsonrpc = { version = "0.21.0", default-features = false }
 
 # These pins are needed for `Cargo-minimal.lock`:
 hex-conservative = { version = "0.2.1" }
