@@ -43,21 +43,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
-name = "bdk_bitcoind_client"
-version = "0.2.0"
-dependencies = [
- "anyhow",
- "bdk_bitcoind_client",
- "bitcoind",
- "corepc-types",
- "filetime",
- "hex-conservative 0.2.1",
- "jsonrpc",
- "log",
- "tar",
-]
-
-[[package]]
 name = "bech32"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -237,6 +222,21 @@ name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
+
+[[package]]
+name = "core_rpc_client"
+version = "0.2.0"
+dependencies = [
+ "anyhow",
+ "bitcoind",
+ "core_rpc_client",
+ "corepc-types",
+ "filetime",
+ "hex-conservative 0.2.1",
+ "jsonrpc",
+ "log",
+ "tar",
+]
 
 [[package]]
 name = "corepc-client"

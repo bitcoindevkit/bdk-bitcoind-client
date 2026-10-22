@@ -1,14 +1,14 @@
-# bdk-bitcoind-client
+# core_rpc_client
 
 <p>
-    <a href="https://crates.io/crates/bdk_bitcoind_client"><img src="https://img.shields.io/crates/v/bdk_bitcoind_client.svg"/></a>
-    <a href="https://docs.rs/bdk_bitcoind_client"><img src="https://img.shields.io/badge/docs.rs-bdk_bitcoind_client-orange.svg"/></a>
+    <a href="https://crates.io/crates/core_rpc_client"><img src="https://img.shields.io/crates/v/core_rpc_client.svg"/></a>
+    <a href="https://docs.rs/core_rpc_client"><img src="https://img.shields.io/badge/docs.rs-core__rpc__client-orange.svg"/></a>
     <a href="https://blog.rust-lang.org/2025/02/20/Rust-1.85.0/"><img src="https://img.shields.io/badge/rustc-1.85.0%2B-orange.svg"/></a>
     <a href="https://github.com/bitcoindevkit/bdk-bitcoind-client/blob/master/LICENSE"><img src="https://img.shields.io/badge/License-MIT%2FApache--2.0-red.svg"/></a>
     <a href="https://github.com/bitcoindevkit/bdk-bitcoind-client/actions/workflows/cont_integration.yml"><img src="https://github.com/bitcoindevkit/bdk-bitcoind-client/actions/workflows/cont_integration.yml/badge.svg"></a>
 </p>
 
-A minimal `bitcoind` RPC client custom built for [BDK](https://github.com/bitcoindevkit/bdk).
+A minimal `bitcoind` RPC client.
 
 ## Features
 
@@ -29,23 +29,23 @@ headers and mempool. Interpreting this data is left to wallets that use this cra
 Add this to your `Cargo.toml` manifest to use this crate with the default Bitcoin Core version v28.0 as the backend:
 
 ```toml
-bdk-bitcoind-client = { version = "0.2.0" }
+core_rpc_client = { version = "0.2.0" }
 ```
 
 Alternatively, add this to your `Cargo.toml` manifest to use this crate with a specific Bitcoin Core version as the backend (v29.0 or v30.0):
 
 ```toml
 # Bitcoin Core v29.0
-bdk-bitcoind-client = { version = "0.2.0", default-features = false, features = ["29_0"] }
+core_rpc_client = { version = "0.2.0", default-features = false, features = ["29_0"] }
 
 # Bitcoin Core v30.0
-bdk-bitcoind-client = { version = "0.2.0", default-features = false, features = ["30_0"] }
+core_rpc_client = { version = "0.2.0", default-features = false, features = ["30_0"] }
 ```
 
 ## Quick Start
 
 ```rust
-use bdk_bitcoind_client::{Auth, Client};
+use core_rpc_client::{Auth, Client};
 use std::path::PathBuf;
 fn main() -> anyhow::Result<()> {
     // Define how to authenticate with `bitcoind` (Cookie File or User/Pass)
@@ -99,11 +99,11 @@ Run `just` to see available commands:
 
 ```console
 ~$ just
-> bdk-bitcoind-client
-> An experimental `bitcoind` RPC client for BDK
+> core_rpc_client
+> An experimental `bitcoind` RPC client
 
 Available recipes:
-    build                # Build the `bdk-bitcoind-client` [alias: b]
+    build                # Build the `core_rpc_client` [alias: b]
     check                # Check code formatting, compilation, and linting [alias: c]
     check-features       # Check that all feature combinations compile [alias: cf]
     check-sigs           # Checks whether all commits in this branch are PGP-signed [alias: cs]
