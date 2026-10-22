@@ -50,7 +50,7 @@ Tag and publish new release:
   - In the body of the tag message put a copy of the **Summary** and **Changelog** for the release.
   - Make sure the tag is signed, for extra safety use the explicit `--sign` flag.
 - [ ] Wait for the CI to finish one last time.
-- [ ] Push the new tag to the `bitcoindevkit/bdk_rpc_client` repo.
+- [ ] Push the new tag to the `bitcoindevkit/core_rpc_client` repo.
 - [ ] Publish **all** the updated crates to crates.io.
 - [ ] Create the release on GitHub.
   - Go to "tags", click on the dots on the right and select "Create Release".
@@ -63,6 +63,6 @@ Tag and publish new release:
 - [ ] Celebrate 🎉
 
 [Semantic Versioning]: https://semver.org/
-[crates.io]: https://crates.io/crates/bdk_rpc_client
-[docs.rs]: https://docs.rs/bdk_rpc_client/latest/bdk_rpc_client
+[crates.io]: https://crates.io/crates/core_rpc_client
+[docs.rs]: https://docs.rs/core_rpc_client/latest/core_rpc_client
 ["keep a changelog"]: https://keepachangelog.com/en/1.0.0/

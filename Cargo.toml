@@ -1,10 +1,10 @@
 [package]
 version = "0.2.0"
-name = "bdk_bitcoind_client"
-description = "A minimal `bitcoind` RPC client custom built for BDK"
+name = "core_rpc_client"
+description = "A minimal `bitcoind` RPC client"
 authors = ["Bitcoin Dev Kit Developers"]
 repository = "https://github.com/bitcoindevkit/bdk-bitcoind-client"
-documentation = "https://docs.rs/bdk-bitcoind-client"
+documentation = "https://docs.rs/core_rpc_client"
 homepage = "https://bitcoindevkit.org"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
@@ -20,7 +20,7 @@ hex-conservative = { version = "0.2.1" }
 
 [dev-dependencies]
 anyhow = { version = "1.0.66" }
-bdk_bitcoind_client = { path = ".", default-features = false, features = ["bitreq", "29_0"] }
+core_rpc_client = { path = ".", default-features = false, features = ["bitreq", "29_0"] }
 bitcoind = { version = "0.41.0", features = ["download", "29_0"] }
 
 # These pins are needed for `Cargo-minimal.lock`:

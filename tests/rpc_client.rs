@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Integration tests for the `bdk_bitcoind_client` [`Client`].
+//! Integration tests for the `core_rpc_client` [`Client`].
 //!
 //! These tests require a running Bitcoin Core node in regtest mode. To setup, refer to [`bitcoind`].
 
 use core::str::FromStr;
 use std::collections::BTreeMap;
 
-use bdk_bitcoind_client::bitreq::{Auth, Client};
+use core_rpc_client::bitreq::{Auth, Client};
 use corepc_types::bitcoin::{
     Amount, BlockHash, Network, Transaction, Txid, absolute, transaction::Version,
 };
